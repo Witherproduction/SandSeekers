@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sTriggerLabels",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sTriggerLabels",
+  "parent":{
+    "name":"effet",
+    "path":"folders/Scripts/Duel/effet.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

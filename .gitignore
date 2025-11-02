@@ -1,0 +1,97 @@
+# OS-specific junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors/IDEs
+.vscode/
+.idea/
+
+# Build and distribution artifacts
+build/
+dist/
+releases/
+export/
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.zip
+*.7z
+*.tar
+*.gz
+*.yyz
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.old
+*.orig
+
+# User runtime data (do not version player saves)
+datafiles/saved_decks.json
+datafiles/favorite_cards.json
+
+# Node, Python, etc. (just in case future tooling appears)
+node_modules/
+venv/
+ 
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+ 
+# Dump file
+*.stackdump
+ 
+# Folder config file
+[Dd]esktop.ini
+ 
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+ 
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+ 
+# Windows shortcuts
+*.lnk
+ 
+# Mac
+ 
+## General
+.DS_Store
+.AppleDouble
+.LSOverride
+ 
+## Icon must end with two \r
+Icon
+ 
+## Thumbnails
+._*
+ 
+## Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+ 
+## Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+ 
+# GameMaker temporary files
+*.resource_order
+*.old

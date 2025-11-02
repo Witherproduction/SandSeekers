@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sEffectMisc",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sEffectMisc",
+  "parent":{
+    "name":"effet",
+    "path":"folders/Scripts/Duel/effet.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

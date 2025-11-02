@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sDeckPersistence",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sDeckPersistence",
+  "parent":{
+    "name":"Collection",
+    "path":"folders/Scripts/Collection.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

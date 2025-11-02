@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sCardDatabase",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sCardDatabase",
+  "parent":{
+    "name":"Collection",
+    "path":"folders/Scripts/Collection.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

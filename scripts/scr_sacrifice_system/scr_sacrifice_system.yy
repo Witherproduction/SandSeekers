@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_sacrifice_system",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_sacrifice_system",
+  "parent":{
+    "name":"Duel",
+    "path":"folders/Scripts/Duel.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

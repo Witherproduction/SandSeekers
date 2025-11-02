@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sAura",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sAura",
+  "parent":{
+    "name":"utils",
+    "path":"folders/Scripts/Duel/effet/utils.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sBotDecks",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sBotDecks",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

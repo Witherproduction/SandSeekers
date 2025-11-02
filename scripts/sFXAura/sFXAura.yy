@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sFXAura",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sFXAura",
+  "parent":{
+    "name":"effet",
+    "path":"folders/Scripts/Duel/effet.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

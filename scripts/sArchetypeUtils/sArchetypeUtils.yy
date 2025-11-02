@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sArchetypeUtils",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sArchetypeUtils",
+  "parent":{
+    "name":"utils",
+    "path":"folders/Scripts/Duel/effet/utils.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

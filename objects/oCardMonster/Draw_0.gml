@@ -1,0 +1,85 @@
+// === oCardMonster - Draw Event ===
+
+// Hériter de l'affichage du parent (sprite de la carte)
+event_inherited();
+
+// Afficher les stats d'attaque et de défense seulement si la carte est sur le terrain
+if (zone == "Field" || zone == "FieldSelected") {
+    // Déterminer si on doit afficher les stats
+    var should_show_stats = false;
+    
+    if (isHeroOwner) {
+        // Côté héros : toujours afficher les stats
+        should_show_stats = true;
+    } else {
+        // Côté adverse : afficher seulement si la carte est face découverte
+        should_show_stats = !isFaceDown;
+    }
+    
+    if (should_show_stats && variable_instance_exists(self, "attack") && variable_instance_exists(self, "defense")) {
+        // Configuration du texte
+        draw_set_font(fontCardDisplay);
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_middle);
+        
+        // Position des stats (en bas de la carte)
+        var card_width = sprite_get_width(sprite_index) * image_xscale;
+        var card_height = sprite_get_height(sprite_index) * image_yscale;
+        
+        var stats_y = y + (card_height / 2) - 15; // 15 pixels du bas de la carte
+        var attack_x = x - (card_width / 4); // Côté gauche
+        var defense_x = x + (card_width / 4); // Côté droit
+        
+        // Fond semi-transparent pour les stats
+        draw_set_alpha(0.8);
+        draw_set_color(c_black);
+        
+        // Déterminer les stats à afficher (effectives si disponibles)
+        var dispAttack = (variable_instance_exists(self, "effective_attack") ? effective_attack : attack);
+        var dispDefense = (variable_instance_exists(self, "effective_defense") ? effective_defense : defense);
+
+        // Déterminer les couleurs selon variation (blanc = base, vert = augmenté, rouge = réduit)
+        var baseAttack = attack;
+        var baseDefense = defense;
+
+        var attack_color = c_white;
+        if (dispAttack > baseAttack) {
+            attack_color = c_green;
+        } else if (dispAttack < baseAttack) {
+            attack_color = c_red;
+        }
+
+        var defense_color = c_white;
+        if (dispDefense > baseDefense) {
+            defense_color = c_green;
+        } else if (dispDefense < baseDefense) {
+            defense_color = c_red;
+        }
+
+        // Fond pour l'attaque
+        var text_width = string_width(string(dispAttack)) + 8;
+        var text_height = string_height(string(dispAttack)) + 4;
+        draw_rectangle(attack_x - text_width/2, stats_y - text_height/2, 
+                      attack_x + text_width/2, stats_y + text_height/2, false);
+        
+        // Fond pour la défense
+        text_width = string_width(string(dispDefense)) + 8;
+        draw_rectangle(defense_x - text_width/2, stats_y - text_height/2, 
+                      defense_x + text_width/2, stats_y + text_height/2, false);
+        
+        draw_set_alpha(1);
+        
+        // Texte de l'attaque (blanc/vert/rouge)
+        draw_set_color(attack_color);
+        draw_text(attack_x, stats_y, string(dispAttack));
+        
+        // Texte de la défense (blanc/vert/rouge)
+        draw_set_color(defense_color);
+        draw_text(defense_x, stats_y, string(dispDefense));
+        
+        // Remettre les paramètres par défaut
+        draw_set_color(c_white);
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+    }
+}
