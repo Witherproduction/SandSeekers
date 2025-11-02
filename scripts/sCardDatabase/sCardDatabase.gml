@@ -304,10 +304,7 @@ function dbRemoveTestCards() {
 // Fonction pour vérifier si des cartes de test existent encore
 function dbCheckForTestCards() {
     var testCardIds = [
-        "gobelin",
-        "dragon_etincelant", 
-        "cheval_rose_noire",
-        "charge_intrepide"
+        
     ];
     
     var foundTestCards = [];
@@ -381,35 +378,4 @@ function create_custom_magic_card(card_id, name, description, sprite, object_id,
 /// Appelez cette fonction depuis n'importe où dans le jeu pour ajouter vos cartes
 function example_add_custom_cards() {
     show_debug_message("=== Ajout de cartes personnalisées d'exemple ===");
-    
-    // Exemple 1: Carte monstre personnalisée
-    create_custom_monster_card(
-        "dragon_de_feu",
-        "Dragon de Feu",
-        2000,
-        1500,
-        4,
-        "Un puissant dragon qui crache des flammes dévastatrices.",
-        "sDragonDeFeu", // Remplacez par le nom de votre sprite
-        "oDragonDeFeu", // Remplacez par le nom de votre objet
-        "rare",
-        "Dragon",
-        "Feu",
-        ""
-    );
-    
-    // Exemple 2: Carte magique personnalisée
-    create_custom_magic_card(
-        "boule_de_feu",
-        "Boule de Feu",
-        "Inflige 500 points de dégâts à un monstre ennemi.",
-        "sBouleDeFeu", // Remplacez par le nom de votre sprite
-        "oBouleDeFeu", // Remplacez par le nom de votre objet
-        "commun",
-        "Feu", // genre
-        "Feu", // archetype
-        ""
-    );
-    
-    show_debug_message("=== Cartes personnalisées ajoutées avec succès ===");
-}
+}    

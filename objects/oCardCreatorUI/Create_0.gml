@@ -127,6 +127,15 @@ buttons.load_card = {
     text: "Charger Carte"
 };
 
+// Nouveau bouton: Exporter la base vers le dossier de release
+buttons.export_db = {
+    x: ui_x + 700,
+    y: ui_y + ui_height - 100,
+    width: 180,
+    height: 45,
+    text: "Exporter la base"
+};
+
 // Positions des champs de saisie (espacement augmenté)
 field_positions = {};
 var field_x = ui_x + 80;

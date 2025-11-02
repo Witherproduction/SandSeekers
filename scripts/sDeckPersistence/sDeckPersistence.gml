@@ -54,14 +54,16 @@ function save_decks_to_file() {
 /// @description Charge tous les decks depuis le fichier JSON
 function load_decks_from_file() {
     try {
-        // Priorité: program_directory (EXE) -> working_directory (AppData)
-        var exe_df = program_directory + "datafiles/saved_decks.json";
-        var exe_root = program_directory + "saved_decks.json";
+        // Priorité: working_directory (AppData) -> program_directory (EXE)
+        var wd_df   = DECK_SAVE_FILE;                 // AppData/datafiles
+        var wd_root = "saved_decks.json";            // AppData root
+        var exe_df  = program_directory + "datafiles/saved_decks.json";
+        var exe_root= program_directory + "saved_decks.json";
         var candidate_paths = [
-            exe_df,                 // EXE/datafiles
-            exe_root,               // EXE root
-            DECK_SAVE_FILE,         // WD/datafiles
-            "saved_decks.json"     // WD root
+            wd_df,                  // 1) AppData/datafiles
+            wd_root,                // 2) AppData root
+            exe_df,                 // 3) EXE/datafiles
+            exe_root                // 4) EXE root
         ];
         var path_to_use = "";
         var file = -1;
@@ -94,6 +96,21 @@ function load_decks_from_file() {
             global.saved_decks = save_data.decks;
             var src = (path_to_use == exe_df || path_to_use == exe_root) ? "EXE" : "APPDATA";
             show_debug_message("### Decks chargés depuis: " + path_to_use + " [SOURCE=" + src + "] (" + string(array_length(global.saved_decks)) + " deck(s))");
+
+            // Migration: si lecture depuis EXE, persister aussi dans AppData
+            if (src == "EXE") {
+                directory_create("datafiles");
+                var migrate_path = DECK_SAVE_FILE;
+                var mf = file_text_open_write(migrate_path);
+                if (mf != -1) {
+                    // Ré-écrire le même contenu JSON dans AppData
+                    file_text_write_string(mf, json_string);
+                    file_text_close(mf);
+                    show_debug_message("### Migration: decks copiés vers AppData -> " + migrate_path);
+                } else {
+                    show_debug_message("### Migration: échec de l'ouverture du fichier AppData pour decks");
+                }
+            }
 
             // Afficher les decks chargés pour debug
             for (var j = 0; j < array_length(global.saved_decks); j++) {
@@ -215,6 +232,14 @@ function load_cards_database_from_file() {
         // Journaux des répertoires clés pour diagnostiquer les chemins
         show_debug_message("### working_directory = " + working_directory);
         show_debug_message("### program_directory = " + program_directory);
+        // Écrire aussi ces infos dans un fichier de debug côté AppData
+        directory_create("datafiles");
+        var _dbg = file_text_open_write("datafiles/debug_paths.txt");
+        if (_dbg != -1) {
+            file_text_write_string(_dbg, "working_directory=" + working_directory + "\n");
+            file_text_write_string(_dbg, "program_directory=" + program_directory + "\n");
+            file_text_close(_dbg);
+        }
         // Résoudre le meilleur chemin disponible en PRIORISANT le dossier de l'exe
         // Ordre: dossier de l'exe -> datafiles de l'exe -> datafiles (AppData/sandbox) -> racine (AppData/sandbox)
         var candidate_paths = [
@@ -249,6 +274,12 @@ function load_cards_database_from_file() {
         global.cards_db_loaded_path = path_to_use;
         var from_exe = string_copy(path_to_use, 1, string_length(program_directory)) == program_directory;
         show_debug_message("### cards_database.json choisi: " + path_to_use + (from_exe ? " [SOURCE=EXE]" : " [SOURCE=APPDATA]"));
+        // Écrire le chemin choisi dans le fichier de debug
+        var _dbg2 = file_text_open_write("datafiles/debug_paths.txt");
+        if (_dbg2 != -1) {
+            file_text_write_string(_dbg2, "chosen_path=" + path_to_use + "\n");
+            file_text_close(_dbg2);
+        }
 
         var db = getDatabase();
         if (db == noone || !instance_exists(db)) {
@@ -275,11 +306,26 @@ function load_cards_database_from_file() {
         } else if (is_array(save_data)) {
             // Format tableau d'objets -> convertir en map par id
             db_map = {};
+            var missing_id_count = 0;
             for (var i = 0; i < array_length(save_data); i++) {
                 var c = save_data[i];
-                if (is_struct(c) && variable_struct_exists(c, "id")) {
+                if (is_struct(c)) {
+                    var has_id = variable_struct_exists(c, "id");
+                    var id_val = has_id ? c.id : "";
+                    if (!has_id || string(id_val) == "") {
+                        // Générer un ID robuste à partir du nom, sinon index
+                        var gen_id = "card_" + string(i);
+                        if (variable_struct_exists(c, "name")) {
+                            gen_id = string_lower(string_replace_all(string(c.name), " ", "_"));
+                        }
+                        c.id = gen_id;
+                        missing_id_count += 1;
+                    }
                     db_map[$ c.id] = c;
                 }
+            }
+            if (missing_id_count > 0) {
+                show_debug_message("### Migration: " + string(missing_id_count) + " carte(s) sans 'id' normalisée(s)");
             }
         } else if (is_struct(save_data)) {
             // Format map directe { id: cardData, ... }
@@ -291,6 +337,19 @@ function load_cards_database_from_file() {
             var total_cards = variable_struct_names_count(db.cardDatabase);
             show_debug_message("### Base de données chargée depuis: " + path_to_use);
             show_debug_message("### Nombre total de cartes chargées: " + string(total_cards));
+            // Si lecture depuis EXE, migrer aussi le JSON vers AppData pour garder l'utilisateur en phase
+            if (from_exe) {
+                directory_create("datafiles");
+                var migrate_path = CARDS_DATABASE_SAVE_FILE; // WD/datafiles/cards_database.json
+                var mf = file_text_open_write(migrate_path);
+                if (mf != -1) {
+                    file_text_write_string(mf, json_string);
+                    file_text_close(mf);
+                    show_debug_message("### Migration: DB copiée vers AppData -> " + migrate_path);
+                } else {
+                    show_debug_message("### Migration: échec de l'ouverture du fichier AppData pour DB");
+                }
+            }
             return true;
         } else {
             show_debug_message("### Erreur: Format JSON non reconnu ou vide pour la base de données");
@@ -298,6 +357,101 @@ function load_cards_database_from_file() {
         }
     } catch (e) {
         show_debug_message("### Erreur lors du chargement de la base de données: " + string(e));
+        return false;
+    }
+}
+
+/// @function export_cards_database_to_release()
+/// @description Copie la base de données des cartes depuis AppData (working_directory)
+/// vers le dossier de l'exécutable si possible, et crée un fallback dans `export/`.
+/// Retourne true si au moins une cible a été écrite.
+function export_cards_database_to_release() {
+    try {
+        // Déterminer la source (priorité AppData/datafiles, puis racine AppData)
+        var src_candidates = [
+            CARDS_DATABASE_SAVE_FILE,   // working_directory/datafiles/cards_database.json
+            "cards_database.json"      // working_directory/cards_database.json
+        ];
+        var src = "";
+        for (var i = 0; i < array_length(src_candidates); i++) {
+            var p = src_candidates[i];
+            if (file_exists(p)) { src = p; break; }
+        }
+        if (src == "") {
+            show_debug_message("### Export DB: source introuvable dans AppData (datafiles ou racine)");
+            return false;
+        }
+
+        // Lire le contenu JSON depuis la source
+        var fh = file_text_open_read(src);
+        if (fh == -1) {
+            show_debug_message("### Export DB: impossible d'ouvrir la source: " + src);
+            return false;
+        }
+        var json_string = "";
+        while (!file_text_eof(fh)) {
+            json_string += file_text_read_string(fh);
+            file_text_readln(fh);
+        }
+        file_text_close(fh);
+
+        var wrote_any = false;
+
+// 1) PRIORITÉ: Copie directe dans le dossier SandSeekers du projet
+var dst_backup_project = "C:\\Users\\arckano\\Desktop\\carte\\SandSeekers\\cards_database.json";
+        var f_backup = file_text_open_write(dst_backup_project);
+        if (f_backup != -1) {
+            file_text_write_string(f_backup, json_string);
+            file_text_close(f_backup);
+            // Vérifier réellement la présence du fichier (le sandbox IDE peut refuser l'accès hors AppData)
+            if (file_exists(dst_backup_project)) {
+    show_debug_message("### Export DB: copié dans le projet SandSeekers -> " + dst_backup_project);
+                wrote_any = true;
+            } else {
+    show_debug_message("### Export DB: sandbox IDE, fichier non visible dans le projet SandSeekers. Utiliser le fallback export/.");
+            }
+        } else {
+    show_debug_message("### Export DB: échec d'ouverture/écriture dans le projet SandSeekers");
+        }
+
+        // 2) Tentative d'écriture à côté de l'exécutable (peut échouer à cause du sandbox)
+        var dst_exe_root = program_directory + "cards_database.json";
+        var f_exe = file_text_open_write(dst_exe_root);
+        if (f_exe != -1) {
+            file_text_write_string(f_exe, json_string);
+            file_text_close(f_exe);
+            show_debug_message("### Export DB: écrit à côté de l'EXE -> " + dst_exe_root);
+            wrote_any = true;
+        } else {
+            show_debug_message("### Export DB: échec d'écriture à côté de l'EXE (sandbox/protection)");
+        }
+
+        // 3) Fallback: écrire dans working_directory/export/cards_database.json
+        directory_create("export");
+        var dst_export = "export/cards_database.json";
+        var f_exp = file_text_open_write(dst_export);
+        if (f_exp != -1) {
+            file_text_write_string(f_exp, json_string);
+            file_text_close(f_exp);
+            show_debug_message("### Export DB: copie de secours -> " + dst_export);
+            wrote_any = true;
+        } else {
+            show_debug_message("### Export DB: échec d'écriture du fallback export/");
+        }
+
+        // Journaliser les chemins dans le fichier de debug
+        var _dbg = file_text_open_write("datafiles/debug_paths.txt");
+        if (_dbg != -1) {
+            file_text_write_string(_dbg, "export_src=" + src + "\n");
+file_text_write_string(_dbg, "export_sandseekers_project=" + dst_backup_project + "\n");
+            file_text_write_string(_dbg, "export_exe_root=" + dst_exe_root + "\n");
+            file_text_write_string(_dbg, "export_fallback=" + dst_export + "\n");
+            file_text_close(_dbg);
+        }
+
+        return wrote_any;
+    } catch (e) {
+        show_debug_message("### Export DB: Erreur -> " + string(e));
         return false;
     }
 }
@@ -377,14 +531,16 @@ function save_favorites_to_file() {
 /// @description Charge la liste des cartes favorites depuis le fichier JSON
 function load_favorites_from_file() {
     try {
-        // Priorité: program_directory (EXE) -> working_directory (AppData)
-        var exe_df = program_directory + "datafiles/favorite_cards.json";
-        var exe_root = program_directory + "favorite_cards.json";
+        // Priorité: working_directory (AppData) -> program_directory (EXE)
+        var wd_df   = FAVORITES_SAVE_FILE;           // AppData/datafiles
+        var wd_root = "favorite_cards.json";        // AppData root
+        var exe_df  = program_directory + "datafiles/favorite_cards.json";
+        var exe_root= program_directory + "favorite_cards.json";
         var candidate_paths = [
-            exe_df,                      // EXE/datafiles
-            exe_root,                    // EXE root
-            FAVORITES_SAVE_FILE,         // WD/datafiles
-            "favorite_cards.json"       // WD root
+            wd_df,                      // 1) AppData/datafiles
+            wd_root,                    // 2) AppData root
+            exe_df,                     // 3) EXE/datafiles
+            exe_root                    // 4) EXE root
         ];
         var path_to_use = "";
         var file = -1;
@@ -417,6 +573,20 @@ function load_favorites_from_file() {
             global.favorite_cards = save_data.favorites;
             var src = (path_to_use == exe_df || path_to_use == exe_root) ? "EXE" : "APPDATA";
             show_debug_message("### Favoris chargés depuis: " + path_to_use + " [SOURCE=" + src + "] (" + string(array_length(global.favorite_cards)) + " carte(s))");
+            
+            // Migration: si lecture depuis EXE, persister aussi dans AppData
+            if (src == "EXE") {
+                directory_create("datafiles");
+                var migrate_path = FAVORITES_SAVE_FILE;
+                var mf = file_text_open_write(migrate_path);
+                if (mf != -1) {
+                    file_text_write_string(mf, json_string);
+                    file_text_close(mf);
+                    show_debug_message("### Migration: favoris copiés vers AppData -> " + migrate_path);
+                } else {
+                    show_debug_message("### Migration: échec de l'ouverture du fichier AppData pour favoris");
+                }
+            }
 
             // Afficher les favoris chargés pour debug
             for (var j = 0; j < array_length(global.favorite_cards); j++) {

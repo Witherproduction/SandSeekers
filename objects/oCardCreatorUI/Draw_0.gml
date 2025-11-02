@@ -214,7 +214,7 @@ for (var i = 0; i < array_length(rarity_buttons); i++) {
 draw_set_halign(fa_left);
 
 // === BOUTONS D'ACTION ===
-var action_buttons = ["create_card", "cancel", "load_card", "back_to_menu"];
+var action_buttons = ["create_card", "cancel", "load_card", "export_db", "back_to_menu"];
 for (var i = 0; i < array_length(action_buttons); i++) {
     var btn_name = action_buttons[i];
     btn = buttons[$ btn_name];
@@ -229,6 +229,9 @@ for (var i = 0; i < array_length(action_buttons); i++) {
             break;
         case "load_card":
             draw_set_color(c_aqua);
+            break;
+        case "export_db":
+            draw_set_color(c_orange);
             break;
         case "back_to_menu":
             draw_set_color(c_red);

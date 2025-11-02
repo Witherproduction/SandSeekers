@@ -82,24 +82,24 @@ initializeDatabase();
 // Fonction d'initialisation
 function initializeDatabase() {
     show_debug_message("=== Initialisation de la base de données ===");
-    // Amorçage: si AppData (working_directory) n'a pas le JSON, tenter de copier depuis le dossier de l'exe
+    // Synchronisation: toujours copier la DB depuis le dossier de l'exe vers AppData (WD)
+    // Objectif: garantir que les JSON mis à jour dans la release écrasent les versions locales obsolètes
     var wd_datafile = CARDS_DATABASE_SAVE_FILE; // working_directory/datafiles/cards_database.json
     var wd_rootfile = "cards_database.json";   // working_directory/cards_database.json
-    var has_wd = file_exists(wd_datafile) || file_exists(wd_rootfile);
-    if (!has_wd) {
-        var exe_df = program_directory + "datafiles/cards_database.json";
-        var exe_root = program_directory + "cards_database.json";
-        show_debug_message("### Seed check: WD has DB? " + string(has_wd) + ", probing EXE...");
-        if (file_exists(exe_df)) {
-            directory_create("datafiles");
-            var ok = file_copy(exe_df, wd_datafile);
-            show_debug_message("### Seed copy from EXE datafiles -> WD: " + string(ok));
-        } else if (file_exists(exe_root)) {
-            var okr = file_copy(exe_root, wd_rootfile);
-            show_debug_message("### Seed copy from EXE root -> WD: " + string(okr));
-        } else {
-            show_debug_message("### Seed failed: no DB found beside EXE");
-        }
+    var exe_df = program_directory + "datafiles/cards_database.json";
+    var exe_root = program_directory + "cards_database.json";
+    show_debug_message("### Sync DB: probing EXE paths...");
+    if (file_exists(exe_df)) {
+        directory_create("datafiles");
+        if (file_exists(wd_datafile)) { file_delete(wd_datafile); }
+        var ok_sync_df = file_copy(exe_df, wd_datafile);
+        show_debug_message("### Sync DB from EXE datafiles -> WD: " + string(ok_sync_df));
+    } else if (file_exists(exe_root)) {
+        if (file_exists(wd_rootfile)) { file_delete(wd_rootfile); }
+        var ok_sync_root = file_copy(exe_root, wd_rootfile);
+        show_debug_message("### Sync DB from EXE root -> WD: " + string(ok_sync_root));
+    } else {
+        show_debug_message("### Sync DB skipped: no DB found beside EXE");
     }
 
     // Amorçage des decks: copier vers AppData si absent
@@ -166,4 +166,4 @@ function initializeDatabase() {
     load_favorites_from_file();
     show_debug_message("Favoris chargés: " + string(get_favorites_count()) + " cartes favorites");
 
-    show_debug_message("Base de données finale: " + string(array_length(variable_struct_get_names(cardDatabase))) + " cartes au total");
+}   show_debug_message("Base de données finale: " + string(array_length(variable_struct_get_names(cardDatabase))) + " cartes au total");

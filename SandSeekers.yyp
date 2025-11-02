@@ -1,6 +1,6 @@
 {
   "$GMProject":"v1",
-  "%Name":"backup",
+  "%Name":"SandSeekers",
   "AudioGroups":[
     {"$GMAudioGroup":"v1","%Name":"audiogroup_default","exportDir":"","name":"audiogroup_default","resourceType":"GMAudioGroup","resourceVersion":"2.0","targets":-1,},
   ],
@@ -100,7 +100,7 @@
   "MetaData":{
     "IDEVersion":"2024.14.0.207",
   },
-  "name":"backup",
+  "name":"SandSeekers",
   "resources":[
     {"id":{"name":"fontCardDisplay","path":"fonts/fontCardDisplay/fontCardDisplay.yy",},},
     {"id":{"name":"fontCardStat_grey","path":"fonts/fontCardStat_grey/fontCardStat_grey.yy",},},

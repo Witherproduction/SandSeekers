@@ -65,6 +65,18 @@ if (mouse_check_button_pressed(mb_left)) {
                           buttons.back_to_menu.y + buttons.back_to_menu.height)) {
         room_goto(rAcceuil);
     }
+
+    // Bouton Exporter la base
+    if (point_in_rectangle(mx, my, buttons.export_db.x, buttons.export_db.y,
+                          buttons.export_db.x + buttons.export_db.width,
+                          buttons.export_db.y + buttons.export_db.height)) {
+        var ok = export_cards_database_to_release();
+        if (ok) {
+            show_status_message("Base exportée (EXE ou export/) — voir logs");
+        } else {
+            show_status_message("Export impossible — voir logs");
+        }
+    }
     
     if (point_in_rectangle(mx, my, buttons.load_card.x, buttons.load_card.y, 
                           buttons.load_card.x + buttons.load_card.width, 
