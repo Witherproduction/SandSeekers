@@ -34,6 +34,9 @@ obj/
 datafiles/saved_decks.json
 datafiles/favorite_cards.json
 
+# Development tools (optional - remove this section if you want to version the sync tools)
+tools/
+
 # Node, Python, etc. (just in case future tooling appears)
 node_modules/
 venv/
