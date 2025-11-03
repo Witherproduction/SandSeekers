@@ -11,4 +11,4 @@ booster = "Usine robotique"
 rarity = "commun"
 lastTurnAttack = 0;
 is_player_card = true; // Définit explicitement cette carte comme appartenant au joueur
-description = "Appel : Détruit un monstre sur ke terrain adverse."
+description = "Appel : Détruit un monstre sur le terrain adverse."

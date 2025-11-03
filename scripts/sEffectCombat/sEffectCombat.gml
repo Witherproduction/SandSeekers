@@ -143,7 +143,6 @@ function destroyCard(card, source = noone) {
             if (fm != noone && variable_instance_exists(card, "fieldPosition")) { fm.remove(card); }
         }
         card.zone = "Graveyard";
-        registerTriggerEvent(TRIGGER_ENTER_GRAVEYARD, card, {});
         var fx = instance_create_layer(card.x, card.y, "Instances", FX_Destruction);
         if (fx != noone) {
             fx.spriteGhost   = card.sprite_index;
@@ -158,7 +157,19 @@ function destroyCard(card, source = noone) {
             if (variable_instance_exists(self, "target") && instance_exists(target) && variable_instance_exists(target, "depth")) { fx.depth_override = target.depth + 1; }
             else { fx.depth_override = 100000; }
         }
-        if (instance_exists(card)) { instance_destroy(card); }
+        // Détruire immédiatement l'instance sauf si une tempo est en attente sur cette carte
+        if (instance_exists(card)) {
+            var has_tempo_pending = variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending;
+            if (has_tempo_pending) {
+                // Masquer brièvement et demander destruction après reprise du flow
+                card.visible = false;
+                card.image_alpha = 0;
+                card.sprite_index = sprInvisible;
+                card._wait_destroy_on_tempo = true;
+            } else {
+                instance_destroy(card);
+            }
+        }
     }
     return true;
 }

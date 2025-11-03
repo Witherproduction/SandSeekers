@@ -33,8 +33,8 @@
   "resourceVersion":"2.0",
   "solid":false,
   "spriteId":{
-    "name":"sDesassembleur",
-    "path":"sprites/sDesassembleur/sDesassembleur.yy",
+    "name":"sDesassembleurRobotique",
+    "path":"sprites/sDesassembleurRobotique/sDesassembleurRobotique.yy",
   },
   "spriteMaskId":null,
   "visible":true,

@@ -16,6 +16,7 @@ description = "Défenseur : détruisez le monstre attaquant";
       {
           trigger: TRIGGER_AFTER_ATTACK,
            effect_type: EFFECT_DESTROY_TARGET,
+           target_source: "attacker",
           label: "post-attaque",
            conditions: {
                owner: "Hero",

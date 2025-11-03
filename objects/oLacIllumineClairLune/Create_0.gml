@@ -16,6 +16,7 @@ effects = [
     {
         trigger: TRIGGER_ON_DEFENSE,
         effect_type: EFFECT_DESTROY_TARGET,
+        target_source: "attacker",
         conditions: {
             owner: "Hero",
             zone: "Field",

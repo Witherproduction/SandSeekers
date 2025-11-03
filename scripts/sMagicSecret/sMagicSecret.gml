@@ -65,14 +65,29 @@ function activateSecretsOnDirectAttack(attacker, targetSecretCard = noone) {
         isFaceDown = false;
         image_index = 0;
         
-        // Calcul des dégâts
+        // Calcul des dégâts et préparation du contexte (n'ajouter 'value' que si demandé)
+        var useAtkVal = (variable_struct_exists(chosenEffect, "use_attacker_attack_as_value") && chosenEffect.use_attacker_attack_as_value);
         var dmg = 0;
-        if (variable_struct_exists(chosenEffect, "use_attacker_attack_as_value") && chosenEffect.use_attacker_attack_as_value) {
+        if (useAtkVal) {
             dmg = effAtk;
+            // Support fraction/multiplicateur éventuel
+            if (variable_struct_exists(chosenEffect, "attack_value_divisor") && is_real(chosenEffect.attack_value_divisor) && chosenEffect.attack_value_divisor > 1) {
+                dmg = floor(dmg / chosenEffect.attack_value_divisor);
+            } else if (variable_struct_exists(chosenEffect, "attack_value_ratio") && is_real(chosenEffect.attack_value_ratio)) {
+                dmg = floor(dmg * chosenEffect.attack_value_ratio);
+            }
         }
         
-        // Préparer le contexte avec la valeur des dégâts et le propriétaire cible
-        var ctx = { attacker: attacker, defender: noone, value: dmg };
+        // Préparer le contexte sans 'value' par défaut pour ne pas écraser effect.value
+        var ctx = { attacker: attacker, defender: noone };
+        if (useAtkVal) { ctx.value = dmg; }
+
+        // Résoudre la cible à partir de target_source si présent
+        if (variable_struct_exists(chosenEffect, "target_source")) {
+            var ts = chosenEffect.target_source;
+            if (ts == "attacker") ctx.target = attacker;
+            else if (ts == "defender") ctx.target = noone;
+        }
         
         // Si l'effet affecte les LP de l'adversaire, configurer owner_is_hero
         if (variable_struct_exists(chosenEffect, "affect_opponent_lp") && chosenEffect.affect_opponent_lp) {
@@ -140,9 +155,10 @@ function activateSecretsOnAttack(attacker, defender) {
         isFaceDown = false;
         image_index = 0;
 
-        // Calcul des dégâts
+        // Calcul des dégâts (n'ajouter 'value' que si demandé)
+        var useAtkVal2 = (variable_struct_exists(chosenEffect, "use_attacker_attack_as_value") && chosenEffect.use_attacker_attack_as_value);
         var dmg = 0;
-        if (variable_struct_exists(chosenEffect, "use_attacker_attack_as_value") && chosenEffect.use_attacker_attack_as_value) {
+        if (useAtkVal2) {
             dmg = effAtk;
             // Support fraction/multiplicateur: moitié d’ATK via attack_value_divisor=2 ou ratio
             if (variable_struct_exists(chosenEffect, "attack_value_divisor") && is_real(chosenEffect.attack_value_divisor) && chosenEffect.attack_value_divisor > 1) {
@@ -152,8 +168,9 @@ function activateSecretsOnAttack(attacker, defender) {
             }
         }
 
-        // Préparer le contexte; si la cible est basée sur la source, la définir
-        var ctx = { attacker: attacker, defender: defender, value: dmg };
+        // Préparer le contexte; ne pas inclure 'value' si non utilisé pour ne pas écraser effect.value
+        var ctx = { attacker: attacker, defender: defender };
+        if (useAtkVal2) { ctx.value = dmg; }
         if (variable_struct_exists(chosenEffect, "target_source")) {
             var ts = chosenEffect.target_source;
             if (ts == "attacker") ctx.target = attacker;

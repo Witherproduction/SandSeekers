@@ -313,7 +313,9 @@ function applyGraveyardArchetypeBoost(card, effect) {
     var srcKey = "effect:" + string(effect.effect_type) + ":" + string(card.id);
     buffSetContribution(card, srcKey, totalBoost, 0);
     buffRecompute(card);
-    show_debug_message("### Continuous Boost (agg): " + string(card.name) + " -> +" + string(totalBoost) + " ATK (" + string(count_monsters) + " '" + string(archetype) + "' au cimetière)");
+    if (variable_global_exists("debug_boost_logs") && global.debug_boost_logs) {
+        show_debug_message("### Continuous Boost (agg): " + string(card.name) + " -> +" + string(totalBoost) + " ATK (" + string(count_monsters) + " '" + string(archetype) + "' au cimetière)");
+    }
     return true;
 }
 
@@ -370,7 +372,9 @@ function applyGraveyardGenreBoost(card, effect) {
     var srcKey = "equip:" + string(card);
     buffSetContribution(t, srcKey, totalBoost, 0);
     buffRecompute(t);
-    show_debug_message("### Continuous Boost (genre): " + string(t.name) + " -> +" + string(totalBoost) + " ATK (" + string(count_monsters) + " '" + string(genre) + "' au cimetière du propriétaire)");
+    if (variable_global_exists("debug_boost_logs") && global.debug_boost_logs) {
+        show_debug_message("### Continuous Boost (genre): " + string(t.name) + " -> +" + string(totalBoost) + " ATK (" + string(count_monsters) + " '" + string(genre) + "' au cimetière du propriétaire)");
+    }
     return true;
 }
 

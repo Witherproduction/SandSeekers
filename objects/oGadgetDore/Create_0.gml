@@ -11,4 +11,4 @@ booster = "Usine robotique"
 rarity = "commun"
 lastTurnAttack = 0;
 is_player_card = true; // Définit explicitement cette carte comme appartenant au joueur
-description = "Appel et Perdu : Ajoute dans votre main un Gadget bronze et un Gadget argent deouis votre deck ou cimetière."
+description = "Appel et Perdu : Ajoute dans votre main un Gadget bronze et un Gadget argent depuis votre deck ou cimetière."

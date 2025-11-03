@@ -6,8 +6,8 @@
 // Effets de base
 #macro EFFECT_DRAW_CARDS "draw_cards"                   // Piocher des cartes
 
-#macro EFFECT_DRAW_THEN_DISCARD_DRAWN_MONSTERS "draw_then_discard_drawn_monsters"
 #macro EFFECT_DISCARD "discard"                          // Effet unifié de défausse paramétrable
+#macro EFFECT_TEMPO "tempo"                              // Étape de délai/tempo pour les flows
 #macro EFFECT_GAIN_LP "gain_lp"                         // Gagner des LP
 #macro EFFECT_LOSE_LP "lose_lp"                         // Perdre des LP
 #macro EFFECT_HEAL_SELF "heal_self"                     // Se soigner
@@ -111,20 +111,54 @@ function executeEffect(card, effect, context = {}) {
     var value = variable_struct_exists(context, "value") ? context.value 
                 : (variable_struct_exists(effect, "value") ? effect.value : 0);
     var target = variable_struct_exists(context, "target") ? context.target : noone;
+    // Résoudre/forcer la cible à partir de target_source si l'effet le demande
+    if (variable_struct_exists(effect, "target_source")) {
+        var tsrc = effect.target_source;
+        if (tsrc == "attacker" && variable_struct_exists(context, "attacker") && instance_exists(context.attacker)) {
+            target = context.attacker;
+        } else if (tsrc == "defender" && variable_struct_exists(context, "defender") && instance_exists(context.defender)) {
+            target = context.defender;
+        } else if (tsrc == "summoned" && variable_struct_exists(context, "summoned") && instance_exists(context.summoned)) {
+            target = context.summoned;
+        }
+    }
     
     // Log de l'effet pour debug (détaillé)
     var effTrigger = variable_struct_exists(effect, "trigger") ? effect.trigger : "";
-    var cardName = (card != noone && instance_exists(card) && variable_instance_exists(card, "name")) ? card.name : object_get_name(card.object_index);
-    var targetDesc;
-    if (target != noone && instance_exists(target)) {
-        targetDesc = (variable_instance_exists(target, "name")) ? target.name : object_get_name(target.object_index);
-    } else if (is_struct(target) && variable_struct_exists(target, "name")) {
-        targetDesc = target.name;
-    } else {
-        targetDesc = "aucune cible";
+    // Sécuriser la récupération du nom de la carte, même si l'instance n'existe plus
+    var cardName = "unknown";
+    if (card != noone) {
+        if (instance_exists(card)) {
+            if (variable_instance_exists(card, "name")) {
+                cardName = card.name;
+            } else if (variable_instance_exists(card, "object_index")) {
+                cardName = object_get_name(card.object_index);
+            }
+        } else if (is_struct(card) && variable_struct_exists(card, "object_index")) {
+            cardName = object_get_name(card.object_index);
+        }
+    }
+    var targetDesc = "aucune cible";
+    if (target != noone) {
+        if (instance_exists(target)) {
+            if (variable_instance_exists(target, "name")) {
+                targetDesc = target.name;
+            } else if (variable_instance_exists(target, "object_index")) {
+                targetDesc = object_get_name(target.object_index);
+            } else {
+                targetDesc = "cible inconnue";
+            }
+        } else if (is_struct(target) && variable_struct_exists(target, "name")) {
+            targetDesc = target.name;
+        }
     }
     var valueStr = variable_struct_exists(effect, "value") ? ("valeur=" + string(value)) : "valeur=nd";
-    var cardZone = (card != noone && instance_exists(card) && variable_instance_exists(card, "zone")) ? card.zone : "unknown";
+    var cardZone = "unknown";
+    if (card != noone && instance_exists(card) && variable_instance_exists(card, "zone")) {
+        cardZone = card.zone;
+    } else if (is_struct(card) && variable_struct_exists(card, "zone")) {
+        cardZone = card.zone;
+    }
     // Réduire le spam: ignorer les logs pour les effets continus
     if (effTrigger != TRIGGER_CONTINUOUS) {
         show_debug_message("### Effet: type=" + string(effectType) + " trig=" + string(effTrigger) + " card=" + string(cardName) + " zone=" + string(cardZone) + " " + valueStr + " cible=" + string(targetDesc));
@@ -193,25 +227,140 @@ function executeEffect(card, effect, context = {}) {
                                : (variable_struct_exists(context, "owner_is_hero") ? context.owner_is_hero : true);
             var ok = drawCardsFor(ownerIsHero, value);
             // Chaînage générique: exécuter les étapes du flow après la pioche
+            // Support de la tempo: si une étape EFFECT_TEMPO est rencontrée,
+            // les étapes restantes sont différées via call_later.
             if (ok && variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
                 var L = array_length(effect.flow);
-                for (var k = 0; k < L; k++) {
-                    var stepEff = effect.flow[k];
+                var idx = 0;
+                while (idx < L) {
+                    var stepEff = effect.flow[idx];
                     if (is_struct(stepEff) && variable_struct_exists(stepEff, "effect_type")) {
-                        // Propager le propriétaire pour cohérence
-                        executeEffect(card, stepEff, { owner_is_hero: ownerIsHero });
+                        if (stepEff.effect_type == EFFECT_TEMPO) {
+                            var frames = 0;
+                            if (variable_struct_exists(stepEff, "frames")) {
+                                frames = max(0, stepEff.frames);
+                            } else if (variable_struct_exists(stepEff, "ms")) {
+                                frames = max(0, round((stepEff.ms / 1000.0) * room_speed));
+                            }
+                            if (frames > 0) {
+                                // Garde: éviter de replanifier si une tempo est déjà en attente (par carte)
+                                var was_pending = (instance_exists(card) && variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending);
+                                var cname_dbg = (card != noone && instance_exists(card) && variable_instance_exists(card, "name")) ? card.name : "unknown";
+                                var effId_dbg = (is_struct(effect) && variable_struct_exists(effect, "id")) ? effect.id : -1;
+                                show_debug_message("### EFFECT_TEMPO: tentative de planif pour " + cname_dbg + " effect_id=" + string(effId_dbg) + " pending=" + string(was_pending));
+                                if (was_pending) {
+                                    show_debug_message("### EFFECT_TEMPO: garde -> planif ignorée (déjà en attente)");
+                                    break;
+                                }
+
+                                // Capturer le reste des étapes après la tempo
+                                var remaining_count = L - (idx + 1);
+                                var remaining = array_create(remaining_count);
+                                var r = 0;
+                                for (var j = idx + 1; j < L; j++) { remaining[r++] = effect.flow[j]; }
+                                var owner_flag = ownerIsHero;
+                                // Stocker l'état du flow sur l'instance carte
+                                card._flow_remaining_steps = remaining;
+                                card._flow_owner_is_hero = owner_flag;
+                                card._flow_effect_id = effId_dbg;
+                                card._flow_tempo_pending = true;
+                                show_debug_message("### EFFECT_TEMPO: planifié pour " + string(frames) + " frames; étapes restantes=" + string(array_length(remaining)));
+                                // Reprendre en re-liant le contexte à l'instance carte
+                                call_later(frames, time_source_units_frames, method(card, function() {
+                                    if (!instance_exists(self)) {
+                                        show_debug_message("### EFFECT_TEMPO: instance carte détruite avant reprise du flow, abandon.");
+                                        return;
+                                    }
+                                    if (!variable_instance_exists(self, "_flow_tempo_pending") || !self._flow_tempo_pending) {
+                                        show_debug_message("### EFFECT_TEMPO: callback ignoré (déjà traité)");
+                                        return;
+                                    }
+                                    self._flow_tempo_pending = false;
+                                    var remaining_local = variable_instance_exists(self, "_flow_remaining_steps") ? self._flow_remaining_steps : undefined;
+                                    var owner_flag_local = variable_instance_exists(self, "_flow_owner_is_hero") ? self._flow_owner_is_hero : undefined;
+                                    var effId_local = variable_instance_exists(self, "_flow_effect_id") ? self._flow_effect_id : -1;
+                                    var cname_local = (variable_instance_exists(self, "name")) ? self.name : "unknown";
+                                    show_debug_message("### EFFECT_TEMPO: reprise du flow pour " + cname_local + " effect_id=" + string(effId_local) + ", étapes=" + string(is_array(remaining_local) ? array_length(remaining_local) : -1));
+                                    if (is_array(remaining_local)) {
+                                        for (var r2 = 0; r2 < array_length(remaining_local); r2++) {
+                                            var step2 = remaining_local[r2];
+                                            if (is_struct(step2) && variable_struct_exists(step2, "effect_type")) {
+                                                show_debug_message("### EFFECT_TEMPO: exécution étape " + string(r2) + " type=" + string(step2.effect_type));
+                                                executeEffect(self, step2, { owner_is_hero: owner_flag_local });
+                                            }
+                                        }
+                                    } else {
+                                        show_debug_message("### EFFECT_TEMPO: aucune étape restante trouvée.");
+                                    }
+                                    // Nettoyage
+                                    if (variable_instance_exists(self, "_flow_remaining_steps")) self._flow_remaining_steps = undefined;
+                                    if (variable_instance_exists(self, "_flow_owner_is_hero")) self._flow_owner_is_hero = undefined;
+                                    if (variable_instance_exists(self, "_flow_effect_id")) self._flow_effect_id = undefined;
+                                    // Destruction différée: si demandé, détruire l'instance maintenant
+                                    if (variable_instance_exists(self, "_wait_destroy_on_tempo") && self._wait_destroy_on_tempo) {
+                                        self._wait_destroy_on_tempo = false;
+                                        if (instance_exists(self)) { instance_destroy(self); }
+                                    }
+                                }));
+                                break; // Stopper le traitement immédiat au niveau de la tempo
+                            } else {
+                                // Tempo nulle: ignorer et continuer
+                            }
+                        } else {
+                            // Étape immédiate
+                            executeEffect(card, stepEff, { owner_is_hero: ownerIsHero });
+                        }
                     }
+                    idx++;
                 }
             }
             return ok;
         }
         
-        case EFFECT_DRAW_THEN_DISCARD_DRAWN_MONSTERS:
+        // Envoyer des cartes du deck au cimetière (Mill)
+        case EFFECT_MILL_DECK:
         {
-            var ownerIsHero2 = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner
-                                : (variable_struct_exists(context, "owner_is_hero") ? context.owner_is_hero : true);
-            return drawThenDiscardDrawnMonsters(card, { owner_is_hero: ownerIsHero2, amount: value }, context);
+            // Déterminer le propriétaire (héros par défaut)
+            var ownerIsHero = (variable_struct_exists(context, "owner_is_hero")) ? context.owner_is_hero 
+                               : ((card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true);
+
+            // Récupérer les instances de deck et cimetière
+            var deckInst = ownerIsHero ? deckHero : deckEnemy;
+            var gyInst   = ownerIsHero ? graveyardHero : graveyardEnemy;
+
+            if (!instance_exists(deckInst) || !instance_exists(gyInst)) {
+                show_debug_message("### EFFECT_MILL_DECK: deck/graveyard introuvable");
+                return false;
+            }
+
+            var toMill = max(0, value);
+            var milled = 0;
+            for (var i = 0; i < toMill; i++) {
+                var dsize = ds_list_size(deckInst.cards);
+                if (dsize <= 0) { break; }
+                // Prendre la carte du dessus du deck (fin de liste)
+                var topIdx = dsize - 1;
+                var topCard = ds_list_find_value(deckInst.cards, topIdx);
+                if (topCard == noone || !instance_exists(topCard)) {
+                    // Supprimer l'entrée invalide pour éviter boucle infinie
+                    ds_list_delete(deckInst.cards, topIdx);
+                    continue;
+                }
+                // Retirer du deck
+                ds_list_delete(deckInst.cards, topIdx);
+                // Envoyer au cimetière (addToGraveyard s’occupe des triggers enter_graveyard)
+                gyInst.addToGraveyard(topCard);
+                // Mettre à jour la zone et détruire l’instance physique
+                topCard.zone = "Graveyard";
+                instance_destroy(topCard);
+                milled++;
+            }
+
+            show_debug_message("### EFFECT_MILL_DECK: " + string(milled) + " carte(s) meulée" + (ownerIsHero ? " (héros)" : " (ennemi)"));
+            return (milled == toMill);
         }
+        
+        
             
 
             

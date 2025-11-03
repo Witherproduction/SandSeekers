@@ -1,9 +1,13 @@
 function sEffectDiscard(card, effect, context) {
     // Effet unifié de défausse (main uniquement) avec critères et options
-    if (card == noone || !instance_exists(card)) return false;
-
-    // Déterminer le propriétaire ciblé (héros par défaut = propriétaire de la carte source)
-    var ownerIsHero = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
+    // Déterminer le propriétaire ciblé
+    // Priorité: contexte explicite > effet.owner > source carte
+    var ownerIsHero = true;
+    if (variable_struct_exists(context, "owner_is_hero")) {
+        ownerIsHero = context.owner_is_hero;
+    } else if (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) {
+        ownerIsHero = card.isHeroOwner;
+    }
     if (variable_struct_exists(effect, "owner")) {
         var ow = string_lower(effect.owner);
         if (ow == "hero") ownerIsHero = true; else if (ow == "enemy") ownerIsHero = false; // sinon: défaut = source
@@ -97,7 +101,7 @@ function sEffectDiscard(card, effect, context) {
 
     // Contexte de chaîne
     var ctx = { from_discard: true, owner_is_hero: ownerIsHero };
-    if (instance_exists(card)) ctx.initiator_card_id = card.id;
+    if (card != noone && instance_exists(card)) ctx.initiator_card_id = card.id;
     if (variable_struct_exists(effect, "id")) ctx.source_effect_id = effect.id;
     ctx.discarded_cards = selected; // ds_list de cartes défaussées (instances au moment de la sélection)
 

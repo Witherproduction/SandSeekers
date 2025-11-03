@@ -338,7 +338,7 @@
     {"id":{"name":"sCorbeauDeLaRoseNoire","path":"sprites/sCorbeauDeLaRoseNoire/sCorbeauDeLaRoseNoire.yy",},},
     {"id":{"name":"sCroiseurCombat","path":"sprites/sCroiseurCombat/sCroiseurCombat.yy",},},
     {"id":{"name":"sDeckBuilder","path":"sprites/sDeckBuilder/sDeckBuilder.yy",},},
-    {"id":{"name":"sDesassembleur","path":"sprites/sDesassembleur/sDesassembleur.yy",},},
+    {"id":{"name":"sDesassembleurRobotique","path":"sprites/sDesassembleurRobotique/sDesassembleurRobotique.yy",},},
     {"id":{"name":"sDispositifEvacuationForce","path":"sprites/sDispositifEvacuationForce/sDispositifEvacuationForce.yy",},},
     {"id":{"name":"sDragonCorrompuRoseNoire","path":"sprites/sDragonCorrompuRoseNoire/sDragonCorrompuRoseNoire.yy",},},
     {"id":{"name":"sDragonGamma","path":"sprites/sDragonGamma/sDragonGamma.yy",},},
