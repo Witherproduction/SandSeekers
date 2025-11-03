@@ -54,7 +54,25 @@ filteredCards = [];
 allCards = [];
 
 // === Menu déroulant (filtre booster) ===
-dropdown_items = ["Tout", "Chemin perdu"];
+// Construire dynamiquement la liste des boosters disponibles à partir de la base
+dropdown_items = [];
+array_push(dropdown_items, "Tout");
+var _seenBoosters = ds_map_create();
+ds_map_add(_seenBoosters, string_lower("Tout"), true);
+var _cardsForBoosters = dbGetAllCards();
+for (var i = 0; i < array_length(_cardsForBoosters); i++) {
+    var c = _cardsForBoosters[i];
+    if (variable_struct_exists(c, "booster")) {
+        var b = string(c.booster);
+        if (b != "" && !ds_map_exists(_seenBoosters, string_lower(b))) {
+            array_push(dropdown_items, b);
+            ds_map_add(_seenBoosters, string_lower(b), true);
+        }
+    }
+}
+ds_map_destroy(_seenBoosters);
+
+// Sélection initiale
 dropdown_selected_index = 0;
 dropdown_open = false;
 dropdown_x = 40;
@@ -63,6 +81,16 @@ dropdown_w = 220;
 dropdown_h = 28;
 
 if (!variable_global_exists("collection_booster_filter")) {
+    global.collection_booster_filter = dropdown_items[dropdown_selected_index];
+} else {
+    // Synchroniser l'index sélectionné avec le filtre global s'il existe dans la liste
+    var foundIndex = -1;
+    for (var di = 0; di < array_length(dropdown_items); di++) {
+        if (string_lower(dropdown_items[di]) == string_lower(global.collection_booster_filter)) {
+            foundIndex = di; break;
+        }
+    }
+    dropdown_selected_index = (foundIndex >= 0) ? foundIndex : 0;
     global.collection_booster_filter = dropdown_items[dropdown_selected_index];
 }
 lastBoosterFilter = global.collection_booster_filter;
@@ -86,8 +114,12 @@ function applyBoosterFilterNow() {
         var c = allCards[i];
         if (target == "Tout") {
             array_push(tmp, c);
-        } else if (variable_struct_exists(c, "booster") && string(c.booster) == "Chemin perdu") {
-            array_push(tmp, c);
+        } else {
+            var hasBoost = variable_struct_exists(c, "booster");
+            var bval = hasBoost ? string(c.booster) : "";
+            if (hasBoost && string_lower(bval) == string_lower(target)) {
+                array_push(tmp, c);
+            }
         }
     }
     filteredCards = tmp;

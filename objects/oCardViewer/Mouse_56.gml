@@ -44,14 +44,8 @@ var my = device_mouse_y_to_gui(0);
             dropdown_open = false;
 
             var selected_text = dropdown_items[index];
-            if (selected_text == "Tout") {
-                global.collection_booster_filter = "Tout";
-            } else if (selected_text == "Chemin perdu") {
-                global.collection_booster_filter = "Chemin perdu";
-            } else {
-                // fallback
-                global.collection_booster_filter = "Tout";
-            }
+            // Assigner directement le texte sélectionné comme filtre
+            global.collection_booster_filter = selected_text;
 
             if (array_length(allCards) > 0) {
                 applyBoosterFilterNow();
