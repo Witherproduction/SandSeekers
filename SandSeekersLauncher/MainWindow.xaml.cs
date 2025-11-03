@@ -51,6 +51,7 @@ namespace SandSeekersLauncher
             httpClient.DefaultRequestHeaders.Add("User-Agent", "SandSeekers-Launcher/1.0");
             
             InstallPathLabel.Text = $"Installation: {GAME_INSTALL_PATH}";
+            try { InstallPathBox.Text = GAME_INSTALL_PATH; } catch { }
             
             // Démarrer la vérification après affichage de la fenêtre
             this.Loaded += async (_, __) => await CheckForUpdatesAsync();
@@ -416,25 +417,38 @@ string tempZipPath = Path.Combine(Path.GetTempPath(), "SandSeekers_Update.zip");
             }
         }
 
-        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        private void BrowseInstallPath_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new SettingsWindow(config, cfg =>
+            try
             {
-                // Sauvegarder et appliquer
-                SaveConfig(cfg);
-                config = cfg;
-                repoOwner = string.IsNullOrWhiteSpace(config.RepoOwner) ? REPO_OWNER : config.RepoOwner.Trim();
-                repoName  = string.IsNullOrWhiteSpace(config.RepoName)  ? REPO_NAME  : config.RepoName.Trim();
-                GAME_INSTALL_PATH = string.IsNullOrWhiteSpace(config.InstallPath)
-                    ? GAME_INSTALL_PATH
-                    : config.InstallPath.Trim();
-                VERSION_FILE_PATH = Path.Combine(GAME_INSTALL_PATH, "version.txt");
-                InstallPathLabel.Text = $"Installation: {GAME_INSTALL_PATH}";
-            });
-            dlg.Owner = this;
-            dlg.ShowDialog();
-            // Relancer la vérification après fermeture
-            _ = CheckForUpdatesAsync();
+                using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+                {
+                    dialog.Description = "Choisissez le dossier d’installation du jeu";
+                    dialog.UseDescriptionForTitle = true;
+                    dialog.ShowNewFolderButton = true;
+                    if (!string.IsNullOrWhiteSpace(InstallPathBox.Text) && System.IO.Directory.Exists(InstallPathBox.Text))
+                        dialog.SelectedPath = InstallPathBox.Text;
+                    var result = dialog.ShowDialog();
+                    if (result == System.Windows.Forms.DialogResult.OK)
+                    {
+                        string selected = dialog.SelectedPath;
+                        InstallPathBox.Text = selected;
+                        // Appliquer immédiatement
+                        GAME_INSTALL_PATH = selected.Trim();
+                        VERSION_FILE_PATH = System.IO.Path.Combine(GAME_INSTALL_PATH, "version.txt");
+                        InstallPathLabel.Text = $"Installation: {GAME_INSTALL_PATH}";
+                        // Sauvegarder config
+                        config.InstallPath = GAME_INSTALL_PATH;
+                        SaveConfig(config);
+                        // Relancer la vérification sur le nouveau chemin
+                        _ = CheckForUpdatesAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Impossible de sélectionner le dossier:\n{ex.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private string ResolveSaveDir()

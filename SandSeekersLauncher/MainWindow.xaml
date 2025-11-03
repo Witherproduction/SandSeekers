@@ -10,7 +10,7 @@
     
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="100"/>
             <RowDefinition Height="50"/>
@@ -36,13 +36,10 @@
                                   Foreground="#FFBDC3C7"/>
                     </StackPanel>
                 </StackPanel>
-                <Button x:Name="SettingsButton"
-                        Grid.Column="1"
-                        Content="⚙️"
-                        Width="40" Height="40"
-                        Style="{StaticResource ModernButton}"
-                        ToolTip="Paramètres"
-                        Click="SettingsButton_Click"/>
+                <DockPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBox x:Name="InstallPathBox" MinWidth="300" Margin="0,0,10,0" ToolTip="Chemin d’installation"/>
+                    <Button Content="Parcourir…" Width="100" Click="BrowseInstallPath_Click"/>
+                </DockPanel>
             </Grid>
         </Border>
         
