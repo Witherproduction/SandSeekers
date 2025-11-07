@@ -29,6 +29,9 @@ if (!variable_global_exists("IA_DIFFICULTY")) global.IA_DIFFICULTY = 0;
 // Ajouter un flag global pour contrôler la verbosité des logs (par défaut désactivé)
 if (!variable_global_exists("VERBOSE_LOGS")) global.VERBOSE_LOGS = false;
 
+// Limite de taille de main (IA et Héros)
+if (!variable_global_exists("MAX_HAND_SIZE")) global.MAX_HAND_SIZE = 10;
+
 // Variable pour sauvegarder la room précédente avant d'entrer dans rDuel
 if (!variable_global_exists("previous_room_before_duel")) {
     global.previous_room_before_duel = rMode; // Valeur par défaut

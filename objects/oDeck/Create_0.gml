@@ -131,40 +131,74 @@ pick = function() { show_debug_message("### oDeck.pick");
 	// Retire la carte du deck
 	ds_list_delete(cards, ds_list_size(cards)-1);
 	
-	// Déclenche l'événement de pioche avant l'ajout à la main
-	registerTriggerEvent(TRIGGER_ON_CARD_DRAW, cardToPick, { owner_is_hero: isHeroOwner });
-	
-	// Ajoute la carte dans la main avec rafraîchissement différé et lance l'FX de pioche
-	var handInst = (isHeroOwner ? handHero : handEnemy);
-	if (instance_exists(handInst)) {
-		// Masque temporairement la carte réelle pour éviter un clignotement
-		cardToPick.visible = false;
-		
-		// Ajouter sans rafraîchir immédiatement
-		handInst.addCard(cardToPick, true);
-		
-		// FX de pioche: glisse verticale vers la main depuis la carte empilée
-		var fx = instance_create_depth(cardToPick.x, cardToPick.y, -100000, oFX_Draw);
-		if (fx != noone) {
-		    fx.spriteGhost       = cardToPick.sprite_index;
-		    fx.imageGhost        = cardToPick.image_index;
-		    fx.image_xscale      = cardToPick.image_xscale;
-		    fx.image_yscale      = cardToPick.image_yscale;
-		    fx.image_angle       = (isHeroOwner ? 0 : 180);
-		    fx.duration_ms       = 400;
-		    fx.target_x          = cardToPick.x; // Mouvement vertical dans la colonne de la carte
-		    fx.target_y          = handInst.y;
-		    fx.hand_to_update    = handInst;
-		    fx.card_to_reveal    = cardToPick;
-		} else {
-		    // Fallback si l'effet n'est pas créé
-		    cardToPick.visible = true;
-		    if (variable_instance_exists(handInst, "updateDisplay")) { handInst.updateDisplay(); }
-		}
-	} else {
-		// Fallback si la main n'existe pas
-		(isHeroOwner ? handHero : handEnemy).addCard(cardToPick);
-	}
+    // Vérifier la capacité de la main du propriétaire
+    var handInst = (isHeroOwner ? handHero : handEnemy);
+    var cap = (variable_global_exists("MAX_HAND_SIZE") ? global.MAX_HAND_SIZE : 10);
+    var handCount = (instance_exists(handInst) ? ds_list_size(handInst.cards) : 0);
+    if (handCount >= cap) {
+        // Main pleine: animation centrale (grande) de brûlure + envoi direct au cimetière, sans triggers
+        var gyInst = (isHeroOwner ? graveyardHero : graveyardEnemy);
+        if (instance_exists(gyInst)) {
+            // FX de défausse au centre: grand et focalisé
+            var fx = instance_create_layer(cardToPick.x, cardToPick.y, "UI", oFX_Discard);
+            if (fx != noone) {
+                fx.spriteGhost    = cardToPick.sprite_index;
+                // Toujours montrer la FACE de la carte (frame 0)
+                fx.imageGhost     = 0;
+                // Afficher au centre de l'écran
+                fx.display_at_center = true;
+                // Taille standard demandée
+                fx.image_xscale   = 1;
+                fx.image_yscale   = 1;
+                fx.image_angle    = 0;
+                // Durée plus lisible pour la brûlure
+                fx.duration_ms    = 1200; // ~1.2s
+                // Flamme plus épaisse
+                fx.flame_thickness = 12;
+                fx.depth_override = -100000;
+            }
+            // Mouvement logique silencieux
+            gyInst.addToGraveyard(cardToPick, true); // suppress_triggers = true
+        }
+        cardToPick.zone = "Graveyard";
+        instance_destroy(cardToPick);
+        return; // ne pas déclencher TRIGGER_ON_CARD_DRAW
+    }
+    
+    // Déclenche l'événement de pioche avant l'ajout à la main
+    registerTriggerEvent(TRIGGER_ON_CARD_DRAW, cardToPick, { owner_is_hero: isHeroOwner });
+    
+    // Ajoute la carte dans la main avec rafraîchissement différé et lance l'FX de pioche
+    if (instance_exists(handInst)) {
+        // Masque temporairement la carte réelle pour éviter un clignotement
+        cardToPick.visible = false;
+        
+        // Ajouter sans rafraîchir immédiatement
+        handInst.addCard(cardToPick, true);
+        
+        // FX de pioche: glisse verticale vers la main depuis la carte empilée
+        var fx = instance_create_depth(cardToPick.x, cardToPick.y, -100000, oFX_Draw);
+        if (fx != noone) {
+            fx.spriteGhost       = cardToPick.sprite_index;
+            // Afficher la face de la carte pendant l'animation
+            fx.imageGhost        = 0;
+            fx.image_xscale      = cardToPick.image_xscale;
+            fx.image_yscale      = cardToPick.image_yscale;
+            fx.image_angle       = (isHeroOwner ? 0 : 180);
+            fx.duration_ms       = 400;
+            fx.target_x          = cardToPick.x; // Mouvement vertical dans la colonne de la carte
+            fx.target_y          = handInst.y;
+            fx.hand_to_update    = handInst;
+            fx.card_to_reveal    = cardToPick;
+        } else {
+            // Fallback si l'effet n'est pas créé
+            cardToPick.visible = true;
+            if (variable_instance_exists(handInst, "updateDisplay")) { handInst.updateDisplay(); }
+        }
+    } else {
+        // Fallback si la main n'existe pas
+        (isHeroOwner ? handHero : handEnemy).addCard(cardToPick);
+    }
 }
 #endregion
 

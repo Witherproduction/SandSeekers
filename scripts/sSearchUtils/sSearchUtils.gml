@@ -292,6 +292,19 @@ function applySearchBySpec(card, effect, context) {
         return false;
     }
     
+    // Respecter la limite de main si destination == Hand
+    if (string_lower(destination) == "hand") {
+        var cap = (variable_global_exists("MAX_HAND_SIZE") ? global.MAX_HAND_SIZE : 10);
+        var handInst = ownerIsHero ? handHero : handEnemy;
+        var current = (instance_exists(handInst) ? ds_list_size(handInst.cards) : 0);
+        var freeSlots = max(0, cap - current);
+        if (freeSlots <= 0) {
+            show_debug_message("### applySearchBySpec: main pleine -> recherche annulée");
+            return false;
+        }
+        maxTargets = min(maxTargets, freeSlots);
+    }
+
     // Sélectionner les cartes à transférer
     var numToSelect = min(maxTargets, array_length(allMatches));
     var selectedData = [];

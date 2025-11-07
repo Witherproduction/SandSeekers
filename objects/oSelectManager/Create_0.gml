@@ -199,8 +199,9 @@ trySelect = function(card) {
                     // Vérifie si l'adversaire a des monstres pour l'attaque directe
                     var enemyHasMonsters = false;
                     var enemyMonsterField = fieldManagerEnemy.getField("Monster");
-                    for(var i = 0; i < array_length(enemyMonsterField.cards); i++) {
-                        if(enemyMonsterField.cards[i] != 0) {
+                    for (var i = 0; i < array_length(enemyMonsterField.cards); i++) {
+                        var em = enemyMonsterField.cards[i];
+                        if (em != 0 && instance_exists(em)) {
                             enemyHasMonsters = true;
                             break;
                         }

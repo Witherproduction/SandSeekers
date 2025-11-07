@@ -5,7 +5,9 @@ isHeroOwner = false; // false par défaut, sera true pour le cimetière héros d
 
 
 /// Fonction : ajouter une carte au cimetière
-addToGraveyard = function(card) {
+/// @param {instance} card - carte à envoyer au cimetière
+/// @param {bool} suppress_triggers - si true, n'active aucun trigger (par défaut false)
+addToGraveyard = function(card, suppress_triggers = false) {
     show_debug_message("### oGraveyard.addToGraveyard: " + string(card));
 
     // Vérifier que l'instance existe avant de l'ajouter
@@ -33,10 +35,11 @@ addToGraveyard = function(card) {
         // Ajoute les données de la carte à la liste du cimetière
         array_push(cards, cardData);
 
-        // Déclenche l'événement d'entrée au cimetière pour cette carte
-        registerTriggerEvent(TRIGGER_ENTER_GRAVEYARD, card, { to_graveyard: self, owner_is_hero: isHeroOwner, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false) });
-        
-        // Événement global: un monstre est envoyé au cimetière (inclut la cible dans le contexte)
-        registerTriggerEvent(TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD, card, { target: card, to_graveyard: self, owner_is_hero: isHeroOwner, suppress_fx_aura: true, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false) });
+        // Déclenchements associés au cimetière sauf si suppression demandée
+        if (!suppress_triggers) {
+            registerTriggerEvent(TRIGGER_ENTER_GRAVEYARD, card, { to_graveyard: self, owner_is_hero: isHeroOwner, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false) });
+            // Événement global: un monstre est envoyé au cimetière (inclut la cible dans le contexte)
+            registerTriggerEvent(TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD, card, { target: card, to_graveyard: self, owner_is_hero: isHeroOwner, suppress_fx_aura: true, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false) });
+        }
     }
 };

@@ -119,8 +119,13 @@ else {
                 placed.x,
                 placed.y
             );
-            // Lancer l'effet (déclenchera le ciblage si nécessaire). La consommation se fera après sélection.
-            executeEffect(placed, effd, {});
+            // Lancer l'effet (déclenchera le ciblage si nécessaire)
+            var resolved = executeEffect(placed, effd, {});
+            if (resolved) {
+                // Marquer l'effet comme utilisé et consommer le sort Direct immédiatement
+                if (!is_undefined(markEffectAsUsed)) { markEffectAsUsed(placed, effd); }
+                if (!is_undefined(consumeSpellIfNeeded)) { consumeSpellIfNeeded(placed, effd); }
+            }
             // Nettoyage de l'état différé
             selectManager.pendingEffect = noone;
             selectManager.pendingEffectCard = noone;

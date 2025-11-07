@@ -40,6 +40,8 @@ function applyArchetypeAuraBuff(card, effect) {
 function cleanupAuraSource(card, effect) {
     if (card == noone || !instance_exists(card)) return false;
     var srcKey = "aura:" + string(card.id);
+    var cname = variable_instance_exists(card, "name") ? card.name : string(card.id);
+    show_debug_message("### cleanupAuraSource: removing contributions from source " + cname + " (" + srcKey + ")");
     with (oCardParent) {
         if (instance_exists(self) && variable_instance_exists(self, "zone") && (zone == "Field" || zone == "FieldSelected")) {
             var isMonster2 = false;

@@ -112,7 +112,7 @@ function equipApplyBuff(card, effect, context) {
     }
     if (gotBonus) totalBuff += extraBuffAdd;
     // Agrégation: poser/mettre à jour la contribution puis recalculer
-    var srcKey = "equip:" + string(card);
+    var srcKey = "equip:" + string(card.id);
     
     // Nouveau: permettre des buffs séparés ATK/DEF si précisés
     var atkBuff = totalBuff;
@@ -130,7 +130,7 @@ function equipCleanup(card, effect, context) {
     if (card == noone || !instance_exists(card)) return false;
     var t2 = (variable_instance_exists(card, "equipped_target")) ? card.equipped_target : noone;
     if (t2 != noone && instance_exists(t2)) {
-        var srcKey = "equip:" + string(card);
+        var srcKey = "equip:" + string(card.id);
         buffRemoveContribution(t2, srcKey);
         buffRecompute(t2);
     }

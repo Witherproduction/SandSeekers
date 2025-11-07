@@ -369,7 +369,7 @@ function applyGraveyardGenreBoost(card, effect) {
 
     var totalBoost = count_monsters * boostPerCard;
     // Utiliser la même clé que les effets d’équipement pour que le cleanup la retire
-    var srcKey = "equip:" + string(card);
+    var srcKey = "equip:" + string(card.id);
     buffSetContribution(t, srcKey, totalBoost, 0);
     buffRecompute(t);
     if (variable_global_exists("debug_boost_logs") && global.debug_boost_logs) {

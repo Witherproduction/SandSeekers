@@ -14,6 +14,10 @@ var card = parentCard;
 
 // Récupérer l'effet activable après un éventuel retournement
 var effect = getAvailableEffect(card);
+// Contexte de tour/phase
+var isHeroTurn = (instance_exists(game) && game.player[game.player_current] == "Hero");
+var currentPhase = (instance_exists(game) && variable_instance_exists(game, "phase")) ? game.phase[game.phase_current] : "";
+var isQuick = (effect != noone && variable_struct_exists(effect, "trigger") && effect.trigger == TRIGGER_QUICK_EFFECT);
 // Détection d'un effet continu (permet d'afficher un bouton même sans effet manuel)
 var hasContinuous = false;
 if (variable_struct_exists(card, "effects")) {
@@ -26,6 +30,12 @@ if (variable_struct_exists(card, "effects")) {
 // Si aucun effet manuel, autoriser le flux pour les cartes à effet continu (pose/retournement)
 if (effect == noone && !hasContinuous) {
     show_debug_message("### oEffectButton: aucun effet disponible");
+    UIManager.hideEffectButton();
+    exit;
+}
+// Bloquer l'activation hors tour du héros et hors phase "Summon", sauf pour les effets rapides
+if (!(isQuick || (isHeroTurn && currentPhase == "Summon"))) {
+    show_debug_message("### oEffectButton: activation refusée hors tour/phase");
     UIManager.hideEffectButton();
     exit;
 }
@@ -81,11 +91,13 @@ if ((isArtifact || isDirect || hasContinuous) && isInHand) {
         exit;
     }
     
-    // Pour Artefact/Direct, stocker l'effet en attente; pour Continu, simple pose face visible
-    if ((isArtifact || isDirect) && instance_exists(oSelectManager) && effect != noone) {
-        selectManager.pendingEffectCard = card;
-        selectManager.pendingEffect = effect;
-    }
+// Pour Artefact/Direct, stocker l'effet en attente; pour Continu, simple pose face visible
+if ((isArtifact || isDirect) && instance_exists(oSelectManager) && effect != noone) {
+    selectManager.pendingEffectCard = card;
+    selectManager.pendingEffect = effect;
+    // Empêcher la destruction immédiate par l'effet continu avant la sélection de cible
+    if (isArtifact) { card.equip_pending = true; }
+}
     // Pose face visible pour activer immédiatement l'effet continu
     UIManager.selectedSummonOrSet = "Summon";
     UIManager.displayIndicator(card);

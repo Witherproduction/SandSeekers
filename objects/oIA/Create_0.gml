@@ -177,13 +177,11 @@ pick = function() {
 #endregion
 
 #region IA Effect Helpers
-aiIsTargetedEffect = function(effectType) {
-    return (effectType == EFFECT_DAMAGE_TARGET
-        || effectType == EFFECT_HEAL_TARGET
-        || effectType == EFFECT_DESTROY_TARGET
-        || effectType == EFFECT_BANISH_TARGET
-        || effectType == EFFECT_RETURN_TO_HAND);
-}
+// Délégation aux scripts globaux pour alléger le code de l’objet
+aiIsTargetedEffect = function(effectType) { return AI_IsTargetedEffect(effectType); }
+aiEvaluateContinuousNetGain = function(card) { return AI_EvaluateContinuousNetGain(card); }
+aiEstimateCardStrength = function(mon) { return AI_EstimateCardStrength(mon); }
+aiEvaluateEffectNetGain = function(card, effect, target) { return AI_EvaluateEffectNetGain(card, effect, target); }
 
 aiChooseBestTarget = function(effectType) {
     var best = noone; var bestScore = -100000;
@@ -255,6 +253,40 @@ aiEffectPriority = function(card, effect) {
     return base;
 }
 
+// Sélectionne la meilleure cible d'équipement (Artéfact) parmi nos monstres
+aiChooseBestEquipTargetFor = function(card, effect) {
+    var best = noone; var bestScore = -100000;
+    var allyOnly = variable_struct_exists(effect, "ally_only") ? effect.ally_only : true;
+    var allowedGenres = variable_struct_exists(effect, "allowed_genres") ? effect.allowed_genres : undefined;
+    for (var i = 0; i < array_length(fieldMonsterEnemy.cards); i++) {
+        var cand = fieldMonsterEnemy.cards[i];
+        if (cand != 0 && instance_exists(cand)) {
+            if (!(variable_instance_exists(cand, "zone") && (cand.zone == "Field" || cand.zone == "FieldSelected"))) continue;
+            if (variable_instance_exists(cand, "orientation") && variable_instance_exists(cand, "isFaceDown")) {
+                if (cand.orientation == "Defense" && cand.isFaceDown) continue;
+            }
+            if (allyOnly) {
+                if (!(variable_instance_exists(cand, "isHeroOwner") && !cand.isHeroOwner)) continue;
+            }
+            if (allowedGenres != undefined) {
+                var g = variable_instance_exists(cand, "genre") ? cand.genre : "";
+                var okGenre = false;
+                for (var gi = 0; gi < array_length(allowedGenres); gi++) {
+                    if (string_lower(g) == string_lower(allowedGenres[gi])) { okGenre = true; break; }
+                }
+                if (!okGenre) continue;
+            }
+            var atk = variable_instance_exists(cand, "attack") ? cand.attack : 0;
+            var def = variable_instance_exists(cand, "defense") ? cand.defense : 0;
+            var eatk = variable_struct_exists(cand, "effective_attack") ? cand.effective_attack : atk;
+            var edef = variable_struct_exists(cand, "effective_defense") ? cand.effective_defense : def;
+            var sc = eatk + edef;
+            if (sc > bestScore) { bestScore = sc; best = cand; }
+        }
+    }
+    return best;
+}
+
 useEffectsMainPhase = function() {
     // 1) Poser en priorité les sorts à effet continu depuis la main (auras, malédictions, etc.)
     //    afin qu'ils soient actifs avant le reste des activations manuelles
@@ -275,11 +307,24 @@ useEffectsMainPhase = function() {
                 if (c0 != 0 && instance_exists(c0) && c0.type == "Magic" && variable_struct_exists(c0, "effects")) {
                     // Détection d'au moins un effet continu sur cette carte
                     var hasContinuous = false;
+                    var isArtifact = (variable_instance_exists(c0, "genre") && string_lower(c0.genre) == string_lower("Artéfact"));
+                    var equipEffect = noone;
                     for (var e0 = 0; e0 < array_length(c0.effects); e0++) {
                         var ef0 = c0.effects[e0];
                         if (variable_struct_exists(ef0, "trigger") && ef0.trigger == TRIGGER_CONTINUOUS) { hasContinuous = true; break; }
+                        if (variable_struct_exists(ef0, "effect_type") && ef0.effect_type == EFFECT_EQUIP_SELECT_TARGET) {
+                            equipEffect = ef0;
+                        }
+                    }
+                    // Ne pas auto-poser les Artéfacts s'il n'y a pas de cible à équiper
+                    if (isArtifact) {
+                        var tgtEquip = (equipEffect != noone) ? aiChooseBestEquipTargetFor(c0, equipEffect) : noone;
+                        if (tgtEquip == noone) { hasContinuous = false; }
                     }
                     if (hasContinuous) {
+                        // Calculer le gain net attendu et ne poser que si positif
+                        var netScore = aiEvaluateContinuousNetGain(c0);
+                        if (netScore <= 0) { continue; }
                         // Placer la carte sur le terrain Magie/Piège si une position libre existe
                         var XY0 = fieldManagerEnemy.getCardPositionAvailableIA(c0);
                         if (XY0 != -1) {
@@ -290,6 +335,17 @@ useEffectsMainPhase = function() {
                                 var ctx0 = { summon_mode: "Summon", owner_is_hero: false };
                                 registerTriggerEvent(TRIGGER_ON_SUMMON, c0, ctx0);
                                 registerTriggerEvent(TRIGGER_ON_SPELL_CAST, c0, ctx0);
+                                // Si c’est un Artéfact et qu’une cible valide existe, lancer immédiatement la sélection d’équipement
+                                if (isArtifact && equipEffect != noone) {
+                                    var tgtEquipNow = (typeof(tgtEquip) != undefined) ? tgtEquip : aiChooseBestEquipTargetFor(c0, equipEffect);
+                                    if (tgtEquipNow != noone) {
+                                        c0.equip_pending = true; // éviter destruction par l’effet continu avant sélection
+                                        var ctxEquipNow = { owner_is_hero: false, target: tgtEquipNow };
+                                        var okEquip = executeEffect(c0, equipEffect, ctxEquipNow);
+                                        markEffectAsUsed(c0, equipEffect);
+                                        // L’effet de sélection met equip_pending à false en cas de succès
+                                    }
+                                }
                                 // Mettre à jour l'état du terrain libre restant
                                 hasFreeMTSlot = false;
                                 if (mtField != noone && variable_struct_exists(mtField, "cards")) {
@@ -318,9 +374,15 @@ useEffectsMainPhase = function() {
                     var hasManual = !variable_struct_exists(e, "trigger") || e.trigger == TRIGGER_MAIN_PHASE || e.trigger == TRIGGER_QUICK_EFFECT;
                     if (!hasManual) continue; if (!checkTriggerConditions(c, e, { owner_is_hero: false })) continue;
                     var tgt = noone; var eType = variable_struct_exists(e, "effect_type") ? e.effect_type : -1;
-                    if (aiIsTargetedEffect(eType)) { tgt = aiChooseBestTarget(eType); if (tgt == noone) continue; }
+                    if (eType == EFFECT_EQUIP_SELECT_TARGET) {
+                        tgt = aiChooseBestEquipTargetFor(c, e);
+                        if (tgt == noone) continue;
+                    } else if (aiIsTargetedEffect(eType)) { tgt = aiChooseBestTarget(eType); if (tgt == noone) continue; }
                     var pr = aiEffectPriority(c, e);
-                    array_push(effectsToUse, { card: c, effect: e, priority: pr, target: tgt });
+                    var netGain = aiEvaluateEffectNetGain(c, e, tgt);
+                    if (netGain <= 0) continue;
+                    var prCombined = pr + netGain;
+                    array_push(effectsToUse, { card: c, effect: e, priority: prCombined, target: tgt, net: netGain });
                 }
             }
         }
@@ -334,7 +396,10 @@ useEffectsMainPhase = function() {
                 var hasManual2 = !variable_struct_exists(e2, "trigger") || e2.trigger == TRIGGER_MAIN_PHASE || e2.trigger == TRIGGER_QUICK_EFFECT;
                 if (!hasManual2) continue; if (!checkTriggerConditions(c2, e2, { owner_is_hero: false })) continue;
                 var tgt2 = noone; var eType2 = variable_struct_exists(e2, "effect_type") ? e2.effect_type : -1;
-                if (aiIsTargetedEffect(eType2)) { tgt2 = aiChooseBestTarget(eType2); if (tgt2 == noone) continue; }
+                if (eType2 == EFFECT_EQUIP_SELECT_TARGET) {
+                    tgt2 = aiChooseBestEquipTargetFor(c2, e2);
+                    if (tgt2 == noone) continue;
+                } else if (aiIsTargetedEffect(eType2)) { tgt2 = aiChooseBestTarget(eType2); if (tgt2 == noone) continue; }
                 var pr2 = aiEffectPriority(c2, e2);
                 array_push(effectsToUse, { card: c2, effect: e2, priority: pr2, target: tgt2 });
             }
@@ -351,9 +416,15 @@ useEffectsMainPhase = function() {
                     var hasManual3 = !variable_struct_exists(e3, "trigger") || e3.trigger == TRIGGER_MAIN_PHASE || e3.trigger == TRIGGER_QUICK_EFFECT;
                     if (!hasManual3) continue; if (!checkTriggerConditions(c3, e3, { owner_is_hero: false })) continue;
                     var tgt3 = noone; var eType3 = variable_struct_exists(e3, "effect_type") ? e3.effect_type : -1;
-                    if (aiIsTargetedEffect(eType3)) { tgt3 = aiChooseBestTarget(eType3); if (tgt3 == noone) continue; }
+                    if (eType3 == EFFECT_EQUIP_SELECT_TARGET) {
+                        tgt3 = aiChooseBestEquipTargetFor(c3, e3);
+                        if (tgt3 == noone) continue;
+                    } else if (aiIsTargetedEffect(eType3)) { tgt3 = aiChooseBestTarget(eType3); if (tgt3 == noone) continue; }
                     var pr3 = aiEffectPriority(c3, e3);
-                    array_push(effectsToUse, { card: c3, effect: e3, priority: pr3, target: tgt3 });
+                    var netGain3 = aiEvaluateEffectNetGain(c3, e3, tgt3);
+                    if (netGain3 <= 0) continue;
+                    var prCombined3 = pr3 + netGain3;
+                    array_push(effectsToUse, { card: c3, effect: e3, priority: prCombined3, target: tgt3, net: netGain3 });
                 }
             }
         }
@@ -389,7 +460,13 @@ useQuickEffectsBeforeAttack = function() {
                 if (variable_struct_exists(e, "trigger") && e.trigger == TRIGGER_QUICK_EFFECT) {
                     if (checkTriggerConditions(c, e, { owner_is_hero: false })) {
                         var tgt = noone; var eType = variable_struct_exists(e, "effect_type") ? e.effect_type : -1;
-                        if (aiIsTargetedEffect(eType)) { tgt = aiChooseBestTarget(eType); }
+                        if (eType == EFFECT_EQUIP_SELECT_TARGET) {
+                            tgt = aiChooseBestEquipTargetFor(c, e);
+                        } else if (aiIsTargetedEffect(eType)) {
+                            tgt = aiChooseBestTarget(eType);
+                        }
+                        var netQ = aiEvaluateEffectNetGain(c, e, tgt);
+                        if (netQ <= 0) { continue; }
                         var ctx = { owner_is_hero: false }; if (tgt != noone) ctx.target = tgt;
                         activateTrigger(c, TRIGGER_QUICK_EFFECT, ctx);
                     }
@@ -460,19 +537,25 @@ summon = function() {
                     }
                 }
             }
-            var summonedValue = (variable_instance_exists(card, "attack") ? card.attack : 0) + (variable_instance_exists(card, "defense") ? card.defense : 0) + (variable_instance_exists(card, "star") ? card.star : 0) * 100;
-            var sacrificeValue = 0;
-            var requiredSacrificeCount = (requiredSacrificeLevel == 1) ? 1 : (requiredSacrificeLevel == 2 ? 2 : 0);
-            for (var s = 0; s < requiredSacrificeCount && s < array_length(availableSacrifices); s++) {
-                var sCard = availableSacrifices[s];
-                if (sCard != 0 && instance_exists(sCard)) {
-                    sacrificeValue += (variable_instance_exists(sCard, "attack") ? sCard.attack : 0)
-                                   +  (variable_instance_exists(sCard, "defense") ? sCard.defense : 0)
-                                   +  (variable_instance_exists(sCard, "star") ? sCard.star : 0) * 100;
-                }
+        var summonedValue = (variable_instance_exists(card, "attack") ? card.attack : 0) + (variable_instance_exists(card, "defense") ? card.defense : 0) + (variable_instance_exists(card, "star") ? card.star : 0) * 100;
+        // Utiliser les stats effectives pour évaluer la qualité réelle des échanges
+        var effCandAtk = variable_struct_exists(card, "effective_attack") ? card.effective_attack : (variable_instance_exists(card, "attack") ? card.attack : 0);
+        var effCandDef = variable_struct_exists(card, "effective_defense") ? card.effective_defense : (variable_instance_exists(card, "defense") ? card.defense : 0);
+        var summonedValue = effCandAtk + effCandDef + ((variable_instance_exists(card, "star") ? card.star : 0) * 50);
+        var sacrificeValue = 0;
+        var requiredSacrificeCount = (requiredSacrificeLevel == 1) ? 1 : (requiredSacrificeLevel == 2 ? 2 : 0);
+        var highestSacEff = 0;
+        for (var s = 0; s < requiredSacrificeCount && s < array_length(availableSacrifices); s++) {
+            var sCard = availableSacrifices[s];
+            if (sCard != 0 && instance_exists(sCard)) {
+                var sEffAtk = variable_struct_exists(sCard, "effective_attack") ? sCard.effective_attack : (variable_instance_exists(sCard, "attack") ? sCard.attack : 0);
+                var sEffDef = variable_struct_exists(sCard, "effective_defense") ? sCard.effective_defense : (variable_instance_exists(sCard, "defense") ? sCard.defense : 0);
+                sacrificeValue += sEffAtk + sEffDef; // ne pas surpondérer les étoiles pour les sacrifices
+                highestSacEff = max(highestSacEff, max(sEffAtk, sEffDef));
             }
-            var dif = (variable_global_exists("IA_DIFFICULTY") ? global.IA_DIFFICULTY : 0);
-            var heroMaxStat = 0; var heroHas = false;
+        }
+        var dif = (variable_global_exists("IA_DIFFICULTY") ? global.IA_DIFFICULTY : 0);
+        var heroMaxStat = 0; var heroHas = false;
             for (var hk = 0; hk < 5; hk++) {
                 var hC = fieldMonsterHero.cards[hk];
                 if (hC != 0 && instance_exists(hC)) {
@@ -482,22 +565,23 @@ summon = function() {
                     heroMaxStat = max(heroMaxStat, max(ha, hd));
                 }
             }
-            var allowWorseTrade = (dif == 1 && heroHas && (max(card.attack, card.defense) >= heroMaxStat));
-            var margin = (dif == 1 && allowWorseTrade) ? 200 : 0;
-            if (requiredSacrificeCount > 0 && (summonedValue + margin) <= sacrificeValue) {
-                var fallback2 = noone;
-                if (ds_exists(handEnemy.cards, ds_type_list)) {
-                    var hsize3 = ds_list_size(handEnemy.cards);
-                    for (var hi3 = 0; hi3 < hsize3; hi3++) {
-                        var cand3 = ds_list_find_value(handEnemy.cards, hi3);
-                        if (cand3 != 0 && instance_exists(cand3) && cand3.type == "Monster" && getSacrificeLevel(cand3.star) == 0) { fallback2 = cand3; break; }
-                    }
+        var allowWorseTrade = (dif == 1 && heroHas && (max(effCandAtk, effCandDef) >= heroMaxStat));
+        var margin = (dif == 1 && allowWorseTrade) ? 200 : 0;
+        // Éviter les sacrifices défavorables: la carte invoquée doit dépasser la somme ET la meilleure des sacrifiées
+        if (requiredSacrificeCount > 0 && ((summonedValue + margin) <= sacrificeValue || max(effCandAtk, effCandDef) <= highestSacEff)) {
+            var fallback2 = noone;
+            if (ds_exists(handEnemy.cards, ds_type_list)) {
+                var hsize3 = ds_list_size(handEnemy.cards);
+                for (var hi3 = 0; hi3 < hsize3; hi3++) {
+                    var cand3 = ds_list_find_value(handEnemy.cards, hi3);
+                    if (cand3 != 0 && instance_exists(cand3) && cand3.type == "Monster" && getSacrificeLevel(cand3.star) == 0) { fallback2 = cand3; break; }
                 }
-                if (fallback2 != noone) {
-                    if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Sacrifice défavorable évité. Fallback sans sacrifice: " + string(variable_instance_exists(fallback2, "name") ? fallback2.name : object_get_name(fallback2.object_index)));
-                    card = fallback2; requiredSacrificeLevel = 0; requiredSacrificeCount = 0; selectedSacrifices = [];
-                } else { if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Sacrifice défavorable détecté, pas de fallback. Passage à la phase suivante."); scheduleNextPhase(); return; }
             }
+            if (fallback2 != noone) {
+                if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Sacrifice défavorable évité. Fallback sans sacrifice: " + string(variable_instance_exists(fallback2, "name") ? fallback2.name : object_get_name(fallback2.object_index)));
+                card = fallback2; requiredSacrificeLevel = 0; requiredSacrificeCount = 0; selectedSacrifices = [];
+            } else { if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Sacrifice défavorable détecté, pas de fallback. Passage à la phase suivante."); scheduleNextPhase(); return; }
+        }
             for (var iSel = 0; iSel < requiredSacrificeCount; iSel++) { array_push(selectedSacrifices, availableSacrifices[iSel]); }
             if (requiredSacrificeCount > 0 && array_length(selectedSacrifices) >= requiredSacrificeCount) { performSacrifices(selectedSacrifices, false); }
         }
@@ -513,10 +597,10 @@ summon = function() {
                     if (effAtkHero2 > heroMaxEffAtk) heroMaxEffAtk = effAtkHero2;
                 }
             }
-            var candAtk = variable_instance_exists(card, "attack") ? card.attack : 0;
+            var candAtk = variable_struct_exists(card, "effective_attack") ? card.effective_attack : (variable_instance_exists(card, "attack") ? card.attack : 0);
             var candDef = variable_instance_exists(card, "defense") ? card.defense : 0;
             // Heuristique simple: si l'adversaire peut dépasser notre ATK, se placer en Défense
-            var shouldSummonInDefense = heroHasMonsters2 && (heroMaxEffAtk >= candAtk);
+            var shouldSummonInDefense = (candAtk <= 0) || (heroHasMonsters2 && (heroMaxEffAtk >= candAtk));
             var orientation = shouldSummonInDefense ? "Defense" : "";
             handEnemy.summon(card, XYPos, orientation);
             game.hasSummonedThisTurn[1] = true;
@@ -565,7 +649,7 @@ iaAttackTryLaunchNext = function() {
                             if ((heroInAttack && effEnemyAtk <= effHeroAtk && !(isPoisoner && effEnemyAtk == effHeroAtk)) || (heroInDefense && effEnemyAtk < effHeroDef && !(isPoisoner && effEnemyAtk == effHeroDef))) {
                                 attackValue = -100000; // Écarter cible suicidaire
                             } else {
-                                if (effEnemyAtk >= effHeroDef && effHeroAtk < effEnemyDef) { attackValue = 1000 + effHeroAtk; }
+                                if ((effEnemyAtk > effHeroDef) && (effHeroAtk < effEnemyDef)) { attackValue = 1000 + effHeroAtk; }
                                 else if (effEnemyAtk > effHeroAtk) { attackValue = 500 + (effEnemyAtk - effHeroAtk); }
                                 else { attackValue = 100 - effHeroAtk; }
                             }
@@ -584,7 +668,9 @@ iaAttackTryLaunchNext = function() {
                         cardEnemy.lastTurnAttack = game.nbTurn; cardHeroPick.engagedThisPhase = true; return true;
                     }
                 } else {
-                    // Attaque directe
+                    // Attaque directe (éviter d'attaquer avec ATK=0)
+                    var effEnemyAtkDir = variable_struct_exists(cardEnemy, "effective_attack") ? cardEnemy.effective_attack : (variable_instance_exists(cardEnemy, "attack") ? cardEnemy.attack : 0);
+                    if (effEnemyAtkDir <= 0) { continue; }
                     if (variable_global_exists("USE_COMBAT_FX") && global.USE_COMBAT_FX) {
                         var fx2 = instance_create_layer(cardEnemy.x, cardEnemy.y, "Instances", FX_Combat);
                         if (fx2 != noone) { fx2.attacker = cardEnemy; fx2.defender = noone; fx2.mode = "direct"; }
@@ -603,7 +689,11 @@ iaAttackTryLaunchNext = function() {
         var availableAttackers = [];
         for (var i = 0; i < 5; i++) {
             var cardEnemy = fieldMonsterEnemy.cards[i];
-            if (cardEnemy != 0 && instance_exists(cardEnemy) && cardEnemy.orientation == "Attack" && (variable_instance_exists(cardEnemy, "lastTurnAttack") ? cardEnemy.lastTurnAttack < game.nbTurn : true)) {                array_push(availableAttackers, {card: cardEnemy, index: i});
+            if (cardEnemy != 0 && instance_exists(cardEnemy) && cardEnemy.orientation == "Attack" && (variable_instance_exists(cardEnemy, "lastTurnAttack") ? cardEnemy.lastTurnAttack < game.nbTurn : true)) {
+                var effEnemyAtkSel = variable_struct_exists(cardEnemy, "effective_attack") ? cardEnemy.effective_attack : (variable_instance_exists(cardEnemy, "attack") ? cardEnemy.attack : 0);
+                if (effEnemyAtkSel > 0) {
+                    array_push(availableAttackers, {card: cardEnemy, index: i});
+                }
             }
         }
         
@@ -660,7 +750,8 @@ iaAttackTryLaunchNext = function() {
                     
                     // Calcul du score d'attaque stratégique
                     var attackScore = 0;
-                    var destroysDef = (effEnemyAtk >= effHeroDef);
+                    // Détruire un défenseur uniquement si ATK strictement supérieure à DEF
+                    var destroysDef = (effEnemyAtk > effHeroDef);
                     var destroysAtk = (effEnemyAtk > effHeroAtk);
                     var heroInAttack = (variable_instance_exists(cardHero, "orientation") && cardHero.orientation == "Attack");
                     var damageToLP = heroInAttack ? max(0, effEnemyAtk - effHeroAtk) : 0;
@@ -741,9 +832,12 @@ iaAttackTryLaunchNext = function() {
                             attackScore += 150;   // curiosité: révéler si aucune meilleure option
                         }
                     }
-                    // Pénalité pour égalités non productives contre une cible en Attaque
+                    // Pénalité pour égalités non productives
                     if (heroInAttack && effEnemyAtk == effHeroAtk) {
                         attackScore -= 300;
+                    }
+                    if (!heroInAttack && effEnemyAtk == effHeroDef) {
+                        attackScore -= 400;
                     }
                     // Légère randomisation pour éviter des choix identiques entre tours
                     attackScore += irandom_range(-15, 15);

@@ -7,7 +7,7 @@
   "ascenderOffset":1,
   "bold":false,
   "canGenerateBitmap":true,
-  "charset":0,
+  "charset":1,
   "first":0,
   "fontName":"Arial",
   "glyphOperations":0,

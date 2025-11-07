@@ -7,7 +7,7 @@
   "ascenderOffset":0,
   "bold":false,
   "canGenerateBitmap":true,
-  "charset":0,
+  "charset":1,
   "first":0,
   "fontName":"Segoe UI",
   "glyphOperations":0,

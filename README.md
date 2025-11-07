@@ -4,12 +4,12 @@ Résumé rapide
 - Base de données la plus complète trouvée: `C:\Users\arckano\AppData\Local\SandSeekers\datafiles\cards_database.json`
 - Taille: 32804 octets
 - Cartes: 86 (champ `total_cards` = 86)
-- Copie dans le projet: `C:\Users\arckano\Desktop\carte\SandSeekers\cards_database.json` (32804 octets)
+- Copie dans le projet (datafiles): `C:\Users\arckano\Desktop\carte\SandSeekers\datafiles\cards_database.json` (32804 octets)
 
 Emplacements utiles
 - AppData (source principale actuelle): `C:\Users\arckano\AppData\Local\SandSeekers\datafiles\cards_database.json`
 - AppData export: `C:\Users\arckano\AppData\Local\SandSeekers\export\cards_database.json` (souvent synchronisé; observé: 32804 octets)
-- Projet (copie prête à zipper): `C:\Users\arckano\Desktop\carte\SandSeekers\cards_database.json`
+- Projet (datafiles, prêt à zipper): `C:\Users\arckano\Desktop\carte\SandSeekers\datafiles\cards_database.json`
 
 Anciennes versions observées (moins complètes)
 - Projet / datafiles: `C:\Users\arckano\Desktop\carte\SandSeekers\datafiles\cards_database.json` (20810 octets, ~53 cartes)
@@ -23,7 +23,7 @@ $p = 'C:\Users\arckano\AppData\Local\SandSeekers\datafiles\cards_database.json'
 
 Compresser la base de données (optionnel)
 ```powershell
-Compress-Archive -Path 'C:\Users\arckano\Desktop\carte\SandSeekers\cards_database.json' `
+Compress-Archive -Path 'C:\Users\arckano\Desktop\carte\SandSeekers\datafiles\cards_database.json' `
   -DestinationPath 'C:\Users\arckano\Desktop\carte\SandSeekers\cards_database.zip' -Force
 ```
 

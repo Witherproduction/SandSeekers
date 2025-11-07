@@ -7,5 +7,3 @@ type = "Magic";
 orientation = "Attack";
 orientationChangedThisTurn = false;
 attackModeActivated = false;
-
-scr_toggle_orientation(self)

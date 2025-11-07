@@ -135,6 +135,8 @@ function destroyCard(card, source = noone) {
     }
     if (instance_exists(card) && variable_instance_exists(card, "zone")) {
         if (card.zone == "Field" || card.zone == "FieldSelected") {
+            // Déclencher la sortie du terrain afin d'activer les nettoyages (auras, etc.)
+            registerTriggerEvent(TRIGGER_LEAVE_FIELD, card, ctx);
             var fm = noone;
             if (instance_exists(fieldManagerHero) || instance_exists(fieldManagerEnemy)) {
                 if (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner && instance_exists(fieldManagerHero)) { fm = fieldManagerHero; }

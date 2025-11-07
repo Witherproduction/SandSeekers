@@ -129,17 +129,50 @@ function specialSummonSelf(card, effect, context) {
     if (card == noone || !instance_exists(card)) return false;
     if (!variable_struct_exists(card, "zone")) return false;
     if (!(card.zone == "Hand" || card.zone == "HandSelected")) return false;
-    UIManager.selectedSummonOrSet = "SpecialSummon";
+    // Déterminer correctement le propriétaire (héros vs IA)
+    var ownerIsHero = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner
+                       : (variable_struct_exists(context, "owner_is_hero") ? context.owner_is_hero : true);
+
+    // Si une position est fournie par le contexte, utiliser la bonne main (héros/ennemi)
     if (variable_struct_exists(context, "position") && array_length(context.position) >= 3) {
+        UIManager.selectedSummonOrSet = "SpecialSummon";
         var pos = context.position;
-        handHero.summon(card, [pos[0], pos[1], pos[2]]);
-        selectManager.unSelectAll();
-        UIManager.stopIndicator();
+        var handInst = ownerIsHero ? handHero : handEnemy;
+        var ok = handInst.summon(card, [pos[0], pos[1], pos[2]]);
+        // Nettoyage UI s'il s'agit du joueur
+        if (ownerIsHero) {
+            if (instance_exists(selectManager)) selectManager.unSelectAll();
+            UIManager.stopIndicator();
+        }
         UIManager.selectedSummonOrSet = "";
-        return true;
+        if (ok) {
+            var ctx = { summon_mode: "SpecialSummon", owner_is_hero: ownerIsHero };
+            registerTriggerEvent(TRIGGER_ON_SUMMON, card, ctx);
+            registerTriggerEvent(TRIGGER_ON_MONSTER_SUMMON, card, ctx);
+        }
+        return ok;
     }
-    UIManager.displayIndicator(card);
-    return true;
+
+    // Pas de position prédéfinie:
+    // - Si c'est le joueur, afficher l'indicateur pour choisir le slot
+    // - Si c'est l'IA, choisir automatiquement le slot libre le plus à gauche et invoquer sur son terrain
+    if (ownerIsHero) {
+        UIManager.selectedSummonOrSet = "SpecialSummon";
+        UIManager.displayIndicator(card);
+        return true;
+    } else {
+        var slot = getLeftmostFreeMonsterSlot(false);
+        if (slot == noone) { show_debug_message("### specialSummonSelf: Aucun slot libre pour l'IA"); return false; }
+        UIManager.selectedSummonOrSet = "SpecialSummon";
+        var ok2 = handEnemy.summon(card, [slot.x, slot.y, slot.pos]);
+        UIManager.selectedSummonOrSet = "";
+        if (ok2) {
+            var ctx2 = { summon_mode: "SpecialSummon", owner_is_hero: false };
+            registerTriggerEvent(TRIGGER_ON_SUMMON, card, ctx2);
+            registerTriggerEvent(TRIGGER_ON_MONSTER_SUMMON, card, ctx2);
+        }
+        return ok2;
+    }
 }
 
 /// @function specialSummonSourceFromHandByCriteria(card, effect, context)

@@ -26,8 +26,9 @@ if (selectManager.attackMode && selectManager.selected != "") {
         var enemyHasMonsters = false;
         var enemyMonsters = fieldMonsterEnemy.cards;
         
-        for(var i = 0; i < array_length(enemyMonsters); i++) {
-            if(enemyMonsters[i] != 0) {
+        for (var i = 0; i < array_length(enemyMonsters); i++) {
+            var em = enemyMonsters[i];
+            if (em != 0 && instance_exists(em)) {
                 enemyHasMonsters = true;
                 show_debug_message("### oAttackDirectEnemy: Monstre ennemi trouvé - attaque directe impossible");
                 break;

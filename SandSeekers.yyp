@@ -284,6 +284,7 @@
     {"id":{"name":"rMode","path":"rooms/rMode/rMode.yy",},},
     {"id":{"name":"rPartieRapide","path":"rooms/rPartieRapide/rPartieRapide.yy",},},
     {"id":{"name":"rPuzzle","path":"rooms/rPuzzle/rPuzzle.yy",},},
+    {"id":{"name":"sAIUtils","path":"scripts/sAIUtils/sAIUtils.yy",},},
     {"id":{"name":"sArchetypeUtils","path":"scripts/sArchetypeUtils/sArchetypeUtils.yy",},},
     {"id":{"name":"sAura","path":"scripts/sAura/sAura.yy",},},
     {"id":{"name":"sBotDecks","path":"scripts/sBotDecks/sBotDecks.yy",},},

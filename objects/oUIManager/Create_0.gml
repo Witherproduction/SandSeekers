@@ -222,6 +222,8 @@ displayEffectButton = function(card) {show_debug_message("### oUIManager.display
         var isInHand = (variable_instance_exists(card, "zone") && (card.zone == "Hand" || card.zone == "HandSelected"));
         var isOwnerHero = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
         var isArtifact = (variable_instance_exists(card, "genre") && card.genre == "Artéfact");
+        var isHeroTurn = (instance_exists(game) && game.player[game.player_current] == "Hero");
+        var currentPhase = (instance_exists(game) && variable_instance_exists(game, "phase")) ? game.phase[game.phase_current] : "";
         // Détection d'au moins un effet continu
         var hasContinuous = false;
         if (variable_struct_exists(card, "effects")) {
@@ -247,7 +249,8 @@ displayEffectButton = function(card) {show_debug_message("### oUIManager.display
             } else if (hasContinuous) {
                 allowFD = true;
             }
-            if (allowFD) {
+            // Affichage uniquement pendant le tour du héros et en phase "Summon"
+            if (allowFD && isHeroTurn && currentPhase == "Summon") {
                 var sprite_h_fd = sprite_get_height(card.sprite_index) * card.image_yscale;
                 instanceEffectButton = instance_create_layer(card.x + 40, card.y - sprite_h_fd/2 - 40, layer_get_id("Instances"), oEffectButton);
                 instanceEffectButton.parentCard = card;
@@ -261,8 +264,22 @@ displayEffectButton = function(card) {show_debug_message("### oUIManager.display
             return;
         }
 
-        // Nouveau: carte Magie en main avec effet continu -> afficher un bouton pour poser face visible
-        if (card.type == "Magic" && isInHand && isOwnerHero && hasContinuous) {
+        // Nouveau: carte Magie en main avec effet continu -> afficher un bouton pour poser face visible (uniquement pendant le tour du héros en phase Summon)
+        if (card.type == "Magic" && isInHand && isOwnerHero && hasContinuous && isHeroTurn && currentPhase == "Summon") {
+            // Si la carte est un Artéfact avec sélection de cible, n'afficher le bouton que s'il existe une cible valide
+            var equipEff = noone;
+            if (variable_struct_exists(card, "effects")) {
+                for (var ei = 0; ei < array_length(card.effects); ei++) {
+                    var efx = card.effects[ei];
+                    if (is_struct(efx) && variable_struct_exists(efx, "effect_type") && efx.effect_type == EFFECT_EQUIP_SELECT_TARGET) {
+                        equipEff = efx; break;
+                    }
+                }
+            }
+            if (equipEff != noone && !hasValidTargetForEffect(card, equipEff)) {
+                show_debug_message("### oUIManager.displayEffectButton: aucune cible valide pour Artefact en main -> bouton masqué");
+                return;
+            }
             var sprite_h_c = sprite_get_height(card.sprite_index) * card.image_yscale;
             instanceEffectButton = instance_create_layer(card.x + 40, card.y - sprite_h_c/2 - 40, layer_get_id("Instances"), oEffectButton);
             instanceEffectButton.parentCard = card;
@@ -276,6 +293,13 @@ displayEffectButton = function(card) {show_debug_message("### oUIManager.display
         // Affichage standard si un effet est disponible ET au moins une cible valide
         var effect = getAvailableEffect(card);
         if (effect != noone && hasValidTargetForEffect(card, effect)) {
+            // Autoriser l'affichage seulement pendant le tour du héros et en phase Summon,
+            // sauf pour les effets rapides (TRIGGER_QUICK_EFFECT) qui peuvent s'afficher à tout moment du tour du héros
+            var isQuick = (variable_struct_exists(effect, "trigger") && effect.trigger == TRIGGER_QUICK_EFFECT);
+            if (!(isQuick || (isHeroTurn && currentPhase == "Summon"))) {
+                show_debug_message("### oUIManager.displayEffectButton: hors tour/phase -> bouton masqué");
+                return;
+            }
             var sprite_h = sprite_get_height(card.sprite_index) * card.image_yscale;
             instanceEffectButton = instance_create_layer(card.x + 40, card.y - sprite_h/2 - 40, layer_get_id("Instances"), oEffectButton);
             instanceEffectButton.parentCard = card;

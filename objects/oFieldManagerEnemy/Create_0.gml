@@ -9,9 +9,15 @@ show_debug_message("### oFieldManagerEnemey.create - after event_inherited")
 
 #region Function getCardPositionAvailableIA
 getCardPositionAvailableIA = function(card) {show_debug_message("### oFieldMonster.getCardPositionAvailableIA");
-	
+
 	// Récupère la liste des positions disponibles
 	var positionAvailable = ds_list_create();
+    // Sécuriser l'accès à la carte avant toute utilisation
+    if (card == noone || !instance_exists(card)) {
+        show_debug_message("### ERREUR: getCardPositionAvailableIA: carte invalide ou inexistante");
+        ds_list_destroy(positionAvailable);
+        return -1;
+    }
     var field = getField(card.type);
     if (field == noone || !instance_exists(field)) {
         show_debug_message("### ERREUR: getCardPositionAvailableIA: terrain introuvable pour type=" + string(card.type));

@@ -517,7 +517,30 @@ function executeEffect(card, effect, context = {}) {
         case EFFECT_SEARCH:
             return applySearchBySpec(card, effect, context);
         case EFFECT_DESTROY:
-            return applyDestroyBySpec(card, effect, context);
+        {
+            var ok_destroy = applyDestroyBySpec(card, effect, context);
+            if (ok_destroy) {
+                // Chaînage post-destruction: supporte flow[] (array), flow (struct unique) et flow_next (struct)
+                var owner_flag = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner"))
+                                 ? card.isHeroOwner
+                                 : (variable_struct_exists(context, "owner_is_hero") ? context.owner_is_hero : true);
+                var ctxd = { from_destroy: true, owner_is_hero: owner_flag };
+                if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
+                    var Ld = array_length(effect.flow);
+                    for (var kd = 0; kd < Ld; kd++) {
+                        var stepD = effect.flow[kd];
+                        if (is_struct(stepD) && variable_struct_exists(stepD, "effect_type")) {
+                            executeEffect(card, stepD, ctxd);
+                        }
+                    }
+                } else if (variable_struct_exists(effect, "flow") && is_struct(effect.flow)) {
+                    executeEffect(card, effect.flow, ctxd);
+                } else if (variable_struct_exists(effect, "flow_next") && is_struct(effect.flow_next)) {
+                    executeEffect(card, effect.flow_next, ctxd);
+                }
+            }
+            return ok_destroy;
+        }
         case EFFECT_SUMMON:
             return applySummonBySpec(card, effect, context);
 

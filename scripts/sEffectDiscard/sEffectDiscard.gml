@@ -43,6 +43,49 @@ function sEffectDiscard(card, effect, context) {
     if (variable_struct_exists(filter, "type")) typeWanted = filter.type;
     if (variable_struct_exists(filter, "face_up")) faceUpReq = filter.face_up;
 
+    // Mode spécial: défausser la carte source elle-même
+    if (mode == "self") {
+        var selectedSelf = ds_list_create();
+        if (card == noone || !instance_exists(card)) {
+            show_debug_message("### sEffectDiscard: carte source invalide pour mode 'self'");
+            ds_list_destroy(selectedSelf);
+            return false;
+        }
+        // Vérifier que la carte est bien dans la main du bon propriétaire
+        var idxSelf = ds_list_find_index(handInst.cards, card);
+        if (idxSelf == -1) {
+            show_debug_message("### sEffectDiscard: carte source non trouvée en main pour mode 'self'");
+            ds_list_destroy(selectedSelf);
+            return false;
+        }
+        ds_list_add(selectedSelf, card);
+        var okSelf = discardSpecificCardsToGraveyard(ownerIsHero, selectedSelf);
+
+        // Contexte de chaîne
+        var ctxSelf = { from_discard: true, owner_is_hero: ownerIsHero };
+        if (card != noone && instance_exists(card)) ctxSelf.initiator_card_id = card.id;
+        if (variable_struct_exists(effect, "id")) ctxSelf.source_effect_id = effect.id;
+        ctxSelf.discarded_cards = selectedSelf;
+
+        // Chaîner les post-étapes si présentes (flow[] ou flow_next)
+        if (okSelf) {
+            if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
+                var Ls = array_length(effect.flow);
+                for (var ks = 0; ks < Ls; ks++) {
+                    var stepEffS = effect.flow[ks];
+                    if (is_struct(stepEffS) && variable_struct_exists(stepEffS, "effect_type")) {
+                        executeEffect(card, stepEffS, ctxSelf);
+                    }
+                }
+            } else if (variable_struct_exists(effect, "flow_next") && is_struct(effect.flow_next)) {
+                executeEffect(card, effect.flow_next, ctxSelf);
+            }
+        }
+
+        ds_list_destroy(selectedSelf);
+        return okSelf;
+    }
+
     // Construire la liste des candidats dans la main (respect des filtres et exclusion de la source au besoin)
     var candidates = ds_list_create();
     var n = ds_list_size(handInst.cards);
@@ -105,14 +148,18 @@ function sEffectDiscard(card, effect, context) {
     if (variable_struct_exists(effect, "id")) ctx.source_effect_id = effect.id;
     ctx.discarded_cards = selected; // ds_list de cartes défaussées (instances au moment de la sélection)
 
-    // Chaîner les post-étapes si présentes (flow[])
-    if (ok && variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
-        var L = array_length(effect.flow);
-        for (var k = 0; k < L; k++) {
-            var stepEff = effect.flow[k];
-            if (is_struct(stepEff) && variable_struct_exists(stepEff, "effect_type")) {
-                executeEffect(card, stepEff, ctx);
+    // Chaîner les post-étapes si présentes (flow[] ou flow_next)
+    if (ok) {
+        if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
+            var L = array_length(effect.flow);
+            for (var k = 0; k < L; k++) {
+                var stepEff = effect.flow[k];
+                if (is_struct(stepEff) && variable_struct_exists(stepEff, "effect_type")) {
+                    executeEffect(card, stepEff, ctx);
+                }
             }
+        } else if (variable_struct_exists(effect, "flow_next") && is_struct(effect.flow_next)) {
+            executeEffect(card, effect.flow_next, ctx);
         }
     }
 
