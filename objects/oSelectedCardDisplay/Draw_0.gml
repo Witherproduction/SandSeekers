@@ -33,7 +33,10 @@ if (variable_instance_exists(self, "selected")) {
 
     var draw_x = 150;
     var draw_y = 250;
+    // Échelle du viewer en duel (revenue à 0.50 comme demandé)
     var scale = 0.50;
+    // Échelle relative par rapport à la référence de la collection (0.6)
+    var rel = scale / 0.6;
 
     // Taille réelle du sprite affiché
     var sprite_w = sprite_get_width(card.sprite_index) * scale;
@@ -43,20 +46,24 @@ if (variable_instance_exists(self, "selected")) {
     var image_bottom = draw_y + sprite_h * 0.5;
 
     // --- Position du texte et du cadre ---
-    var margin_top = 10;
-    var margin_side = 10;
-    var margin_bottom = 10;
+    var margin_top = round(10 * rel);
+    var margin_side = round(10 * rel);
+    var margin_bottom = round(10 * rel);
     var text_x = draw_x - sprite_w * 0.5 + margin_side;
     var text_y = image_bottom + margin_top;
     var text_width = sprite_w - margin_side * 2;
-    var line_height = 20;
-
-    draw_set_font(fontCardDisplay);
+    // Police et mise à l’échelle cohérentes avec la collection
+    draw_set_font(fontCardText);
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
 
+    // Échelle de ligne basée sur 20px à la référence 0.6
+    var base_line_h0 = string_height("Ag");
+    var line_scale = (base_line_h0 > 0) ? (20 * rel) / base_line_h0 : 1;
+    var line_height = base_line_h0 * line_scale;
+
     // --- Infos carte sous la carte (style rCollection) ---
-    var margin = 8;
+    var margin = round(8 * rel);
     var info_x = draw_x - sprite_w * 0.5 + margin;
     var info_y = draw_y + sprite_h * 0.5 + margin;
     var line_height = 20;
@@ -70,7 +77,8 @@ if (variable_instance_exists(self, "selected")) {
         display_name = object_get_name(card.object_index);
     }
     array_push(info_head_lines, "Nom: " + string(display_name));
-    if (variable_instance_exists(card, "star")) {
+    var is_magic = object_is_ancestor(card.object_index, oCardMagic) || (variable_instance_exists(card, "type") && string_lower(string(card.type)) == "magic");
+    if (!is_magic && variable_instance_exists(card, "star")) {
         array_push(info_head_lines, "Niveau: " + string(card.star));
     }
     if (variable_instance_exists(card, "genre") && string_length(string_trim(card.genre)) > 0) {
@@ -85,7 +93,8 @@ if (variable_instance_exists(self, "selected")) {
     if (variable_instance_exists(card, "description") && string_length(string_trim(card.description)) > 0) {
         array_push(desc_lines, "Description:");
         var desc_full = string(card.description);
-        var max_width_info = sprite_w - margin * 2;
+        // Adapter la largeur max au texte transformé (compense l’échelle de ligne)
+        var max_width_info = (sprite_w - margin * 2) / line_scale;
         var words_info = string_split(desc_full, " ");
         var line_info = "";
         for (var wi = 0; wi < array_length(words_info); wi++) {
@@ -106,7 +115,7 @@ if (variable_instance_exists(self, "selected")) {
     var rarity_present = variable_instance_exists(card, "rarity");
     
     // ATK/DEF: à placer entre rareté et description pour les monstres
-    var is_monster = variable_instance_exists(card, "type") && card.type == "Monster";
+    var is_monster = object_is_ancestor(card.object_index, oCardMonster) || (variable_instance_exists(card, "type") && string_lower(string(card.type)) == "monster");
     var has_attack_defense = is_monster && variable_instance_exists(card, "attack") && variable_instance_exists(card, "defense");
 
     // Cadre pour infos (largeur = carte + cadre rareté si présent) avec scroll pour la description
@@ -115,14 +124,13 @@ if (variable_instance_exists(self, "selected")) {
         var glow_intensity2 = getRarityGlowIntensity(card.rarity);
         if (glow_intensity2 > 0) extra_border = 6;
     }
-    var frame_pad = 5;
+    var frame_pad = round(5 * rel);
     var rect_x1 = draw_x - sprite_w * 0.5 - extra_border;
     var rect_y1 = info_y - frame_pad;
     var rect_x2 = draw_x + sprite_w * 0.5 + extra_border;
 
     // Hauteur max: jusqu'au bas de l'écran (marge 10px)
-    var frame_max_height = max(40, (room_height - 10) - rect_y1);
-    var line_height = 20;
+    var frame_max_height = max(round(40 * rel), (room_height - 10) - rect_y1);
     var header_lines = array_length(info_head_lines) + (rarity_present ? 1 : 0) + (has_attack_defense ? 1 : 0);
     // Nombre max de lignes totales dans le cadre
     var max_lines = floor((frame_max_height - frame_pad * 2) / line_height);
@@ -160,17 +168,18 @@ if (variable_instance_exists(self, "selected")) {
     // Dessin de l'en-tête (non scrollé)
     var y_cursor = info_start_y;
     for (var i = 0; i < array_length(info_head_lines); i++) {
-        draw_text(info_x, y_cursor, info_head_lines[i]);
+        draw_text_transformed(info_x, y_cursor + 2, info_head_lines[i], line_scale, line_scale, 0);
         y_cursor += line_height;
     }
     if (rarity_present) {
         var rarity_color = getRarityColor(card.rarity);
         var rarity_name = getRarityDisplayName(card.rarity);
         draw_set_color(c_white);
-        draw_text(info_x, y_cursor, "Rareté: ");
-        var rarity_text_x = info_x + string_width("Rareté: ");
+        var rarity_label = "Rareté: ";
+        draw_text_transformed(info_x, y_cursor + 2, rarity_label, line_scale, line_scale, 0);
+        var rarity_text_x = info_x + string_width(rarity_label) * line_scale;
         draw_set_color(rarity_color);
-        draw_text(rarity_text_x, y_cursor, rarity_name);
+        draw_text_transformed(rarity_text_x, y_cursor + 2, rarity_name, line_scale, line_scale, 0);
         draw_set_color(c_white);
         y_cursor += line_height;
     }
@@ -178,16 +187,17 @@ if (variable_instance_exists(self, "selected")) {
     // Dessin des stats ATK/DEF pour les monstres
     if (has_attack_defense) {
         draw_set_color(c_white);
-        draw_text(info_x, y_cursor, "ATK: " + string(card.attack) + " / DEF: " + string(card.defense));
+        var atkdef_line = "ATK: " + string(card.attack) + " / DEF: " + string(card.defense);
+        draw_text_transformed(info_x, y_cursor + 2, atkdef_line, line_scale, line_scale, 0);
         y_cursor += line_height;
     }
 
     // Clipping et dessin de la description (scrollable)
     if (desc_view_h > 0) {
         gpu_set_scissor(rect_x1 + 1, desc_view_y1, (rect_x2 - rect_x1) - 2, desc_view_h);
-        var base_y = desc_view_y1 - textScrollY;
+        var base_y = desc_view_y1 - textScrollY + 2;
         for (var j = 0; j < array_length(desc_lines); j++) {
-            draw_text(info_x, base_y + j * line_height, desc_lines[j]);
+            draw_text_transformed(info_x, base_y + j * line_height, desc_lines[j], line_scale, line_scale, 0);
         }
         gpu_set_scissor(0, 0, room_width, room_height);
     }
@@ -197,6 +207,202 @@ if (variable_instance_exists(self, "selected")) {
         draw_sprite_ext(card.sprite_index, 0, draw_x, draw_y, scale, scale, 0, c_white, 1);
     } else {
         draw_sprite_ext(card.sprite_index, card.image_index, draw_x, draw_y, scale, scale, 0, c_white, 1);
+    }
+
+    // --- Overlay texte sur la carte (zones précises, aligné Collection) ---
+    {
+        var spr = card.sprite_index;
+        // Utiliser la même échelle que la carte pour l'overlay texte
+        var s = scale;
+        var cw = sprite_get_width(spr) * s;
+        var ch = sprite_get_height(spr) * s;
+        var tlx = draw_x - cw * 0.5;
+        var tly = draw_y - ch * 0.5;
+
+        // Détection carte magique pour masquer coût et ATK/DEF
+        var is_magic = object_is_ancestor(card.object_index, oCardMagic) || (variable_instance_exists(card, "type") && string_lower(string(card.type)) == "magic");
+
+        // Coordonnées des zones (référence scale 1.0)
+        var name_x1 = 24,  name_y1 = 16;  var name_x2 = 387, name_y2 = 59;
+        var star_x1 = 388, star_y1 = 16;  var star_x2 = 438, star_y2 = 60;
+        var genre_x1 = 29, genre_y1 = 394; var genre_x2 = 223, genre_y2 = 419;
+        var arch_x1  = 228, arch_y1  = 394; var arch_x2  = 422, arch_y2  = 419;
+        var desc_x1  = 23,  desc_y1  = 438; var desc_x2  = 421, desc_y2  = 592;
+        var atk_x1   = 303, atk_y1   = 594; var atk_x2   = 348, atk_y2   = 609;
+        var def_x1   = 383, def_y1   = 594; var def_x2   = 421, def_y2   = 608;
+
+        // Police et couleur
+        if (font_exists(fontCardText)) draw_set_font(fontCardText);
+        draw_set_color(c_black);
+
+        // Helpers d’échelle
+        var fit_line = function(text, max_px, rw, rh) {
+            var base_line_h = string_height("Ag");
+            var w0 = string_width(text);
+            var h0 = base_line_h;
+            var s_max = (h0 > 0) ? max_px / h0 : 1;
+            var s_w = (w0 > 0) ? rw / w0 : s_max;
+            var s_h = (h0 > 0) ? rh / h0 : s_max;
+            return min(s_max, s_w, s_h);
+        };
+
+        var fit_block = function(text, max_px, rw, rh) {
+            var base_line_h = string_height("Ag");
+            var s = (base_line_h > 0) ? max_px / base_line_h : 1;
+            for (var it = 0; it < 3; it++) {
+                var sep = base_line_h;               // séparation à l'échelle 1
+                var w_eff = (s > 0) ? (rw / s) : rw; // largeur efficace à scale 1
+                var h = string_height_ext(text, sep, w_eff);
+                if (h <= 0) break;
+                var s_h = rh / h;                    // cible: h*s <= rh
+                s = min(s, s_h);
+            }
+            return s;
+        };
+
+        var pad = 0;
+
+        // NAME (centré verticalement dans sa zone, avec décalage +2px)
+        if (variable_instance_exists(card, "name")) {
+            var tx = string(card.name);
+            var mar = 7;
+            var rw = (name_x2 - name_x1) * s - pad * 2 - mar * 2;
+            var rh = (name_y2 - name_y1) * s - pad * 2;
+            var scale_tx = fit_line(tx, 20, rw, rh);
+            var left = tlx + name_x1 * s + pad + mar;
+            var top  = tly + name_y1 * s + pad;
+            var base_line_h = string_height("Ag");
+            var hsc = base_line_h * scale_tx;
+            var cy = top + max(0, (rh - hsc) * 0.5) + 2;
+            draw_text_transformed(left, cy, tx, scale_tx, scale_tx, 0);
+        }
+
+        // STAR (coût)
+        if (!is_magic && variable_instance_exists(card, "star")) {
+            var tx = string(card.star);
+            var rw = (star_x2 - star_x1) * s - pad * 2;
+            var rh = (star_y2 - star_y1) * s - pad * 2;
+            var scale_tx = fit_line(tx, 20, rw, rh);
+            var left = tlx + star_x1 * s + pad;
+            var top  = tly + star_y1 * s + pad;
+            var wsc  = string_width(tx) * scale_tx;
+            var cx   = left + max(0, (rw - wsc) * 0.5);
+            draw_text_transformed(cx, top + 2, tx, scale_tx, scale_tx, 0);
+        }
+
+        // GENRE
+        if (variable_instance_exists(card, "genre")) {
+            var tx = string(card.genre);
+            var mar = 7;
+            var rw = (genre_x2 - genre_x1) * s - pad * 2 - mar * 2;
+            var rh = (genre_y2 - genre_y1) * s - pad * 2;
+            var scale_tx = fit_line(tx, 16, rw, rh);
+            draw_text_transformed(tlx + genre_x1 * s + pad + mar, tly + genre_y1 * s + pad + 2, tx, scale_tx, scale_tx, 0);
+        }
+
+        // ARCHETYPE
+        if (variable_instance_exists(card, "archetype")) {
+            var tx = string(card.archetype);
+            var mar = 7;
+            var rw = (arch_x2 - arch_x1) * s - pad * 2 - mar * 2;
+            var rh = (arch_y2 - arch_y1) * s - pad * 2;
+            var scale_tx = fit_line(tx, 16, rw, rh);
+            draw_text_transformed(tlx + arch_x1 * s + pad + mar, tly + arch_y1 * s + pad + 2, tx, scale_tx, scale_tx, 0);
+        }
+
+        // DESCRIPTION (justifiée)
+        if (variable_instance_exists(card, "description")) {
+            var tx = string(card.description);
+            var mar = 7;
+            var rw = (desc_x2 - desc_x1) * s - pad * 2 - mar * 2;
+            var rh = (desc_y2 - desc_y1) * s - pad * 2;
+            // Cap à 24px avec ajustement largeur/hauteur (meilleure lisibilité sans couper)
+            var base_h = string_height("Ag");
+            var scale_tx = fit_block(tx, 20, rw, rh);
+            var left = tlx + desc_x1 * s + pad + mar;
+            var top  = tly + desc_y1 * s + pad;
+            var line_h = base_h * scale_tx;
+            var space_w = string_width(" ") * scale_tx;
+            var dy = top + 2;
+
+            var paragraphs = string_split(tx, "\n");
+            for (var p = 0; p < array_length(paragraphs); p++) {
+                var words = string_split(paragraphs[p], " ");
+                var i = 0;
+                while (i < array_length(words)) {
+                    var line_words = [];
+                    var count = 0;
+                    var line_w = 0;
+                    while (i < array_length(words)) {
+                        var w = words[i];
+                        var ww = string_width(w) * scale_tx;
+                        var plus_space = (count > 0) ? space_w : 0;
+                        if (line_w + plus_space + ww <= rw) {
+                            line_words[count] = w;
+                            count += 1;
+                            line_w += plus_space + ww;
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    // Justification contrôlée: limiter l'espace ajouté pour éviter les trous
+                    var gaps = max(0, count - 1);
+                    var extra_gap = 0;
+                    if (gaps > 0 && i < array_length(words)) {
+                        var extra = rw - line_w;
+                        var extra_raw = (extra > 0) ? (extra / gaps) : 0;
+                        var max_extra_ratio = 0.5; // au plus +50% de l'espace normal
+                        extra_gap = min(extra_raw, string_width(" ") * scale_tx * max_extra_ratio);
+                    }
+                    var dx = left;
+                    for (var j = 0; j < count; j++) {
+                        var wj = line_words[j];
+                        draw_text_transformed(dx, dy, wj, scale_tx, scale_tx, 0);
+                        var wjw = string_width(wj) * scale_tx;
+                        if (j < count - 1) {
+                            dx += wjw + space_w + extra_gap;
+                        } else {
+                            dx += wjw;
+                        }
+                    }
+                    dy += line_h;
+                    if (dy + line_h > top + rh) break;
+                }
+            }
+        }
+
+        // ATK
+        if (!is_magic && variable_instance_exists(card, "attack")) {
+            var tx = string(card.attack);
+            var rw = (atk_x2 - atk_x1) * s - pad * 2;
+            var rh = (atk_y2 - atk_y1) * s - pad * 2;
+            var base_line_h = string_height("Ag");
+            var scale_tx = (base_line_h > 0) ? 10 / base_line_h : 1;
+            var left = tlx + atk_x1 * s + pad;
+            var top  = tly + atk_y1 * s + pad;
+            var wsc  = string_width(tx) * scale_tx;
+            var hsc  = base_line_h * scale_tx;
+            var cx   = left + max(0, (rw - wsc) * 0.5);
+            var cy   = top  + max(0, (rh - hsc) * 0.5) - 1;
+            draw_text_transformed(cx, cy, tx, scale_tx, scale_tx, 0);
+        }
+
+        // DEF
+        if (!is_magic && variable_instance_exists(card, "defense")) {
+            var tx = string(card.defense);
+            var rw = (def_x2 - def_x1) * s - pad * 2;
+            var rh = (def_y2 - def_y1) * s - pad * 2;
+            var base_line_h = string_height("Ag");
+            var scale_tx = (base_line_h > 0) ? 10 / base_line_h : 1;
+            var left = tlx + def_x1 * s + pad;
+            var top  = tly + def_y1 * s + pad;
+            var wsc  = string_width(tx) * scale_tx;
+            var hsc  = base_line_h * scale_tx;
+            var cx   = left + max(0, (rw - wsc) * 0.5);
+            var cy   = top  + max(0, (rh - hsc) * 0.5) - 1;
+            draw_text_transformed(cx, cy, tx, scale_tx, scale_tx, 0);
+        }
     }
 
     // === Panneau latéral droit pour les effets ===

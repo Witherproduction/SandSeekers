@@ -89,7 +89,7 @@ if (room == rCollection) {
     draw_text(grid_center_x, page_y + btn_h/2, "Page " + string(currentPage));
     draw_set_halign(fa_left);
 
-    // === AFFICHAGE DES 3 BOUTONS ===
+    // === AFFICHAGE DU PANNEAU DÉTAILLÉ + 3 BOUTONS ===
     // Afficher uniquement quand une carte est selectionnee
     if (instance_exists(oCollectionCardDisplay) && 
         oCollectionCardDisplay.selectedCard != noone && 
@@ -101,9 +101,11 @@ if (room == rCollection) {
         var display_scale = 0.6;
         var card_width = sprite_get_width(oCollectionCardDisplay.selectedCard.sprite_index) * display_scale;
         var card_height = sprite_get_height(oCollectionCardDisplay.selectedCard.sprite_index) * display_scale;
+
+        // Le panneau détaillé est dessiné par oCollectionCardDisplay
         
         // Position des cadres a gauche du viewer
-    var frames_x = viewer_x - card_width/2 - 60; // 60 pixels a gauche du viewer
+        var frames_x = viewer_x - card_width/2 - 60; // 60 pixels a gauche du viewer
         var frames_start_y = viewer_y - card_height/2; // Commencer du haut de la carte
         
         // Espacement vertical entre les cadres

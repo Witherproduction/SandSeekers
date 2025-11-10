@@ -23,8 +23,8 @@ if ((instance_exists(oSummon) && instance_position(mouse_x, mouse_y, oSummon) !=
     return;
 }
 
-// Bloquer les clics quand le menu d'action est visible, sauf cas autorisés
-if (variable_global_exists("isActionMenuOpen") && global.isActionMenuOpen) {
+// Bloquer les clics quand le menu d'action est visible — uniquement en Duel
+if (room == rDuel && variable_global_exists("isActionMenuOpen") && global.isActionMenuOpen) {
     var allowDeckPick = instance_exists(game) && game.phase[game.phase_current] == "Pick" && zone == "Deck";
     var allowUnselectClick = instance_exists(oSelectManager) && selectManager.selected == id;
     // Autoriser viewer-only pour cartes visibles (héros et adversaire)

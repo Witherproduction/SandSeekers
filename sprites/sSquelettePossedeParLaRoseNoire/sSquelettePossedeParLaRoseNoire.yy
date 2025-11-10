@@ -12,7 +12,7 @@
   "edgeFiltering":false,
   "For3D":false,
   "frames":[
-    {"$GMSpriteFrame":"v1","%Name":"62f35cbe-c0a1-4a1b-83ee-4287d5ff8dc1","name":"62f35cbe-c0a1-4a1b-83ee-4287d5ff8dc1","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
+    {"$GMSpriteFrame":"v1","%Name":"667347fc-8ed4-4b4d-a4ee-47e25c07da51","name":"667347fc-8ed4-4b4d-a4ee-47e25c07da51","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
     {"$GMSpriteFrame":"v1","%Name":"273092bf-677d-4161-a98c-034f8a5363c2","name":"273092bf-677d-4161-a98c-034f8a5363c2","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
   ],
   "gridX":0,
@@ -72,8 +72,8 @@
     "tracks":[
       {"$GMSpriteFramesTrack":"","builtinName":0,"events":[],"inheritsTrackColour":true,"interpolation":1,"isCreationTrack":false,"keyframes":{"$KeyframeStore<SpriteFrameKeyframe>":"","Keyframes":[
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
-                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"62f35cbe-c0a1-4a1b-83ee-4287d5ff8dc1","path":"sprites/sSquelettePossedeParLaRoseNoire/sSquelettePossedeParLaRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
-              },"Disabled":false,"id":"a56a850f-37b7-4aad-95e3-d5a5c4c81f70","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
+                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"667347fc-8ed4-4b4d-a4ee-47e25c07da51","path":"sprites/sSquelettePossedeParLaRoseNoire/sSquelettePossedeParLaRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
+              },"Disabled":false,"id":"aa92aa4e-1ba5-450e-bb45-6c96c5dde895","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
                 "0":{"$SpriteFrameKeyframe":"","Id":{"name":"273092bf-677d-4161-a98c-034f8a5363c2","path":"sprites/sSquelettePossedeParLaRoseNoire/sSquelettePossedeParLaRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
               },"Disabled":false,"id":"b3f90bdc-b447-4539-a689-1bb1c54153ed","IsCreationKey":false,"Key":1.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},

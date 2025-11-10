@@ -12,7 +12,7 @@
   "edgeFiltering":false,
   "For3D":false,
   "frames":[
-    {"$GMSpriteFrame":"v1","%Name":"286ed73e-f14a-4633-b0c7-22c476f6937e","name":"286ed73e-f14a-4633-b0c7-22c476f6937e","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
+    {"$GMSpriteFrame":"v1","%Name":"084d48e4-c75a-4f5e-86f5-3aeb5bbf33bb","name":"084d48e4-c75a-4f5e-86f5-3aeb5bbf33bb","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
     {"$GMSpriteFrame":"v1","%Name":"273092bf-677d-4161-a98c-034f8a5363c2","name":"273092bf-677d-4161-a98c-034f8a5363c2","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
   ],
   "gridX":0,
@@ -72,8 +72,8 @@
     "tracks":[
       {"$GMSpriteFramesTrack":"","builtinName":0,"events":[],"inheritsTrackColour":true,"interpolation":1,"isCreationTrack":false,"keyframes":{"$KeyframeStore<SpriteFrameKeyframe>":"","Keyframes":[
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
-                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"286ed73e-f14a-4633-b0c7-22c476f6937e","path":"sprites/sDragonCorrompuRoseNoire/sDragonCorrompuRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
-              },"Disabled":false,"id":"4a73f25c-b0eb-4e81-afac-234a7fb8b560","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
+                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"084d48e4-c75a-4f5e-86f5-3aeb5bbf33bb","path":"sprites/sDragonCorrompuRoseNoire/sDragonCorrompuRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
+              },"Disabled":false,"id":"ed5f289c-84bc-4cde-b8db-0c650466c492","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
                 "0":{"$SpriteFrameKeyframe":"","Id":{"name":"273092bf-677d-4161-a98c-034f8a5363c2","path":"sprites/sDragonCorrompuRoseNoire/sDragonCorrompuRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
               },"Disabled":false,"id":"b3f90bdc-b447-4539-a689-1bb1c54153ed","IsCreationKey":false,"Key":1.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},

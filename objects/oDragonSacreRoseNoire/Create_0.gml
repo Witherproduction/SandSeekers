@@ -13,6 +13,9 @@ rarity = "commun"
 is_player_card = true; // Définit explicitement cette carte comme appartenant au joueur
 description = "Ne peut pas attaquer directement. Cette carte gagne 500 atk pour chaque monstre Rose noire dans le cimetière des 2 joueurs."
 
+// Limitation d'exemplaires en deck (définie au niveau de l'objet)
+limited = 1;
+
 // Propriétés pour le système de dégâts générique
 effective_attack = attack;
 effective_defense = defense;

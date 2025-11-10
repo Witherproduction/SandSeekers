@@ -7,9 +7,6 @@
   "managed":true,
   "name":"oAraigneeDeLaRoseNoire",
   "overriddenProperties":[
-    {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"attack","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"1900",},
-    {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"defense","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"1200",},
-    {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"star","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"2",},
     {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"type","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"\"Monster\"",},
   ],
   "parent":{

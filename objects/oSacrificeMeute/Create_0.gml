@@ -17,6 +17,9 @@ if (!variable_instance_exists(id, "effects")) effects = [];
 effects[0] = {
     trigger: TRIGGER_MAIN_PHASE,
     effect_type: EFFECT_DESTROY,
+    conditions: {
+        has_genre_on_field: "Bête"
+    },
     owner: "ally",
     criteria: {
         type: "Monster",

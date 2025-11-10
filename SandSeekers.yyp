@@ -105,6 +105,7 @@
     {"id":{"name":"fontCardDisplay","path":"fonts/fontCardDisplay/fontCardDisplay.yy",},},
     {"id":{"name":"fontCardStat_grey","path":"fonts/fontCardStat_grey/fontCardStat_grey.yy",},},
     {"id":{"name":"fontCardStat_white","path":"fonts/fontCardStat_white/fontCardStat_white.yy",},},
+    {"id":{"name":"fontCardText","path":"fonts/fontCardText/fontCardText.yy",},},
     {"id":{"name":"fontLP","path":"fonts/fontLP/fontLP.yy",},},
     {"id":{"name":"fontStep","path":"fonts/fontStep/fontStep.yy",},},
     {"id":{"name":"FX_Combat","path":"objects/FX_Combat/FX_Combat.yy",},},

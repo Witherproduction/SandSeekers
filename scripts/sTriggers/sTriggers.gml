@@ -794,17 +794,32 @@ function registerTriggerEvent(triggerType, sourceCard = noone, context = {}) {
 
     // Log de debug sur l'événement
 
-    var srcName = (sourceCard != noone) ? (variable_instance_exists(sourceCard, "name") ? sourceCard.name : object_get_name(sourceCard.object_index)) : "none";
+    var srcName = "none";
+    if (sourceCard != noone && instance_exists(sourceCard)) {
+        if (instance_exists(sourceCard)) {
+            srcName = variable_instance_exists(sourceCard, "name") ? sourceCard.name : object_get_name(sourceCard.object_index);
+        } else {
+            srcName = "destroyed";
+        }
+    }
 
     show_debug_message("### registerTriggerEvent: trigger=" + string(triggerType) + " source=" + srcName);
+
+    // Source sûre (sourceCard valide ou carte détruite fournie dans le contexte)
+    var srcCardSafe = noone;
+    if (sourceCard != noone && instance_exists(sourceCard)) {
+        srcCardSafe = sourceCard;
+    } else if (variable_struct_exists(context, "destroyed_card") && instance_exists(context.destroyed_card)) {
+        srcCardSafe = context.destroyed_card;
+    }
 
 
 
     // Ajouter la carte source au contexte et déclencher directement sur elle
 
-    if (sourceCard != noone) {
+    if (srcCardSafe != noone) {
 
-        context.source = sourceCard;
+        context.source = srcCardSafe;
 
         // Désactiver l'aura pour les triggers liés à la destruction/cimetière
 
@@ -815,12 +830,12 @@ function registerTriggerEvent(triggerType, sourceCard = noone, context = {}) {
         }
 
         // Si la carte source est face cachée, ne pas déclencher certains triggers immédiats
-        var isFD = (variable_instance_exists(sourceCard, "isFaceDown") && sourceCard.isFaceDown);
+        var isFD = (variable_instance_exists(srcCardSafe, "isFaceDown") && srcCardSafe.isFaceDown);
         if (isFD && (triggerType == TRIGGER_ENTER_FIELD || triggerType == TRIGGER_ON_SUMMON)) {
             show_debug_message("### registerTriggerEvent: skip " + string(triggerType) + " on facedown card " + srcName);
         } else {
             // Déclenche l'effet sur la carte source même si elle quitte le terrain
-            activateTrigger(sourceCard, triggerType, context);
+            activateTrigger(srcCardSafe, triggerType, context);
         }
 
     }

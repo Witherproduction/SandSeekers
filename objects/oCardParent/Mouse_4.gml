@@ -12,17 +12,19 @@ if (room != rDuel && room != rCollection) {
     exit;
 }
 
-// Bloquer toute interaction carte si des indicateurs d’emplacement sont actifs (choix de position)
-if ((instance_exists(oIndicatorParent)) || (instance_exists(oUIManager) && UIManager.selectedSummonOrSet != "")) {
-    return;
+// Bloquer toute interaction carte si des indicateurs d’emplacement sont actifs (choix de position) — uniquement en Duel
+if (room == rDuel) {
+    if ((instance_exists(oIndicatorParent)) || (instance_exists(oUIManager) && UIManager.selectedSummonOrSet != "")) {
+        return;
+    }
 }
 
-// Si le GraveyardViewer est ouvert, bloquer les clics sur les cartes
+// Si le GraveyardViewer est ouvert, bloquer les clics — uniquement en Duel
 // Vérifier si la variable globale existe avant de l'utiliser
-if (variable_global_exists("isGraveyardViewerOpen") && global.isGraveyardViewerOpen) return;
+if (room == rDuel && variable_global_exists("isGraveyardViewerOpen") && global.isGraveyardViewerOpen) return;
 
-// Bloquer les clics quand le menu d'action est visible, sauf cas autorisés
-if (variable_global_exists("isActionMenuOpen") && global.isActionMenuOpen) {
+// Bloquer les clics quand le menu d'action est visible — uniquement en Duel
+if (room == rDuel && variable_global_exists("isActionMenuOpen") && global.isActionMenuOpen) {
     var allowDeckPick = instance_exists(game) && game.phase[game.phase_current] == "Pick" && zone == "Deck";
     var allowUnselectClick = instance_exists(oSelectManager) && selectManager.selected == id;
     // Autoriser un clic de carte héros pour afficher le viewer, même avec le menu ouvert
@@ -34,9 +36,9 @@ if (variable_global_exists("isActionMenuOpen") && global.isActionMenuOpen) {
     }
 }
 
-// Vérifier si un bouton UI est présent et bloque les clics
+// Vérifier si un bouton UI est présent et bloque les clics — uniquement en Duel
 var uiButtonPresent = false;
-if (instance_exists(oSummon) || instance_exists(oSet) || instance_exists(oPositionButton) || instance_exists(oAttack) || instance_exists(oEffectButton)) {
+if (room == rDuel && (instance_exists(oSummon) || instance_exists(oSet) || instance_exists(oPositionButton) || instance_exists(oAttack) || instance_exists(oEffectButton))) {
     // Vérifier si le clic est directement sur un bouton UI
     with(oSummon) {
         var w = sprite_get_width(sprite_index) * image_xscale;
@@ -115,9 +117,9 @@ if (uiButtonPresent) {
     return;
 }
 
-// Bloquer uniquement pendant la distribution en phase Pick
-if (instance_exists(game) && game.timerEnabledPick && game.phase[game.phase_current] == "Pick")
-	return;
+// Bloquer uniquement pendant la distribution en phase Pick — Duel
+if (room == rDuel && instance_exists(game) && game.timerEnabledPick && game.phase[game.phase_current] == "Pick")
+    return;
 
 ///////////////////////////////////////////////////////////////////////
 // Constructeur

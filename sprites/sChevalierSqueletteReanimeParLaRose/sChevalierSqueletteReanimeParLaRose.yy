@@ -12,7 +12,7 @@
   "edgeFiltering":false,
   "For3D":false,
   "frames":[
-    {"$GMSpriteFrame":"v1","%Name":"fcf9e95f-7d2b-4df7-b7c4-53e636a8fcdc","name":"fcf9e95f-7d2b-4df7-b7c4-53e636a8fcdc","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
+    {"$GMSpriteFrame":"v1","%Name":"ca04301a-48e1-42bb-aa61-1c48650fc5f7","name":"ca04301a-48e1-42bb-aa61-1c48650fc5f7","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
     {"$GMSpriteFrame":"v1","%Name":"3e328e18-fc9e-498f-82bf-d483ba9f3224","name":"3e328e18-fc9e-498f-82bf-d483ba9f3224","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
   ],
   "gridX":0,
@@ -72,8 +72,8 @@
     "tracks":[
       {"$GMSpriteFramesTrack":"","builtinName":0,"events":[],"inheritsTrackColour":true,"interpolation":1,"isCreationTrack":false,"keyframes":{"$KeyframeStore<SpriteFrameKeyframe>":"","Keyframes":[
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
-                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"fcf9e95f-7d2b-4df7-b7c4-53e636a8fcdc","path":"sprites/sChevalierSqueletteReanimeParLaRose/sChevalierSqueletteReanimeParLaRose.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
-              },"Disabled":false,"id":"8278506c-7b52-4bd6-a0c1-e6fd839350e9","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
+                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"ca04301a-48e1-42bb-aa61-1c48650fc5f7","path":"sprites/sChevalierSqueletteReanimeParLaRose/sChevalierSqueletteReanimeParLaRose.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
+              },"Disabled":false,"id":"59158107-a158-4c52-b989-31c6cd227e1e","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
                 "0":{"$SpriteFrameKeyframe":"","Id":{"name":"3e328e18-fc9e-498f-82bf-d483ba9f3224","path":"sprites/sChevalierSqueletteReanimeParLaRose/sChevalierSqueletteReanimeParLaRose.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
               },"Disabled":false,"id":"77a7f538-1dc8-4355-926f-cb3ab342689d","IsCreationKey":false,"Key":1.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},

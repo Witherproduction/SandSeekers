@@ -12,7 +12,7 @@
   "edgeFiltering":false,
   "For3D":false,
   "frames":[
-    {"$GMSpriteFrame":"v1","%Name":"f8df82d3-7c58-4d5b-9ca6-fc4609154a69","name":"f8df82d3-7c58-4d5b-9ca6-fc4609154a69","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
+    {"$GMSpriteFrame":"v1","%Name":"396745e5-494a-46fb-ab46-e3e5aba95fa1","name":"396745e5-494a-46fb-ab46-e3e5aba95fa1","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
     {"$GMSpriteFrame":"v1","%Name":"38a6e2fe-a02e-415e-9cd8-16586c143a9b","name":"38a6e2fe-a02e-415e-9cd8-16586c143a9b","resourceType":"GMSpriteFrame","resourceVersion":"2.0",},
   ],
   "gridX":0,
@@ -72,8 +72,8 @@
     "tracks":[
       {"$GMSpriteFramesTrack":"","builtinName":0,"events":[],"inheritsTrackColour":true,"interpolation":1,"isCreationTrack":false,"keyframes":{"$KeyframeStore<SpriteFrameKeyframe>":"","Keyframes":[
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
-                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"f8df82d3-7c58-4d5b-9ca6-fc4609154a69","path":"sprites/sPetiteSorciereDeLaRoseNoire/sPetiteSorciereDeLaRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
-              },"Disabled":false,"id":"5f9a25d0-fb35-41cb-9b04-e707a43d2893","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
+                "0":{"$SpriteFrameKeyframe":"","Id":{"name":"396745e5-494a-46fb-ab46-e3e5aba95fa1","path":"sprites/sPetiteSorciereDeLaRoseNoire/sPetiteSorciereDeLaRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
+              },"Disabled":false,"id":"7bd47e10-fd5c-491d-9708-b733df4955f7","IsCreationKey":false,"Key":0.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},
             {"$Keyframe<SpriteFrameKeyframe>":"","Channels":{
                 "0":{"$SpriteFrameKeyframe":"","Id":{"name":"38a6e2fe-a02e-415e-9cd8-16586c143a9b","path":"sprites/sPetiteSorciereDeLaRoseNoire/sPetiteSorciereDeLaRoseNoire.yy",},"resourceType":"SpriteFrameKeyframe","resourceVersion":"2.0",},
               },"Disabled":false,"id":"dac090bd-698d-44de-bfda-8065d385d2c6","IsCreationKey":false,"Key":1.0,"Length":1.0,"resourceType":"Keyframe<SpriteFrameKeyframe>","resourceVersion":"2.0","Stretch":false,},

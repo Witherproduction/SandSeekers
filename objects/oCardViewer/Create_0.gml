@@ -53,6 +53,32 @@ function clearCardDisplay() {
 filteredCards = [];
 allCards = [];
 
+// Filtrage: exclure les cartes "Jeton" de la collection
+function isTokenCard(card) {
+    var isToken = false;
+    if (variable_struct_exists(card, "genre") && string_lower(string(card.genre)) == "jeton") {
+        isToken = true;
+    }
+    if (!isToken && variable_struct_exists(card, "id")) {
+        var cid = string_lower(string(card.id));
+        if (string_copy(cid, 1, 6) == "jeton_") {
+            isToken = true;
+        }
+    }
+    return isToken;
+}
+
+function filterOutTokens(cards) {
+    var res = [];
+    for (var i = 0; i < array_length(cards); i++) {
+        var c = cards[i];
+        if (!isTokenCard(c)) {
+            array_push(res, c);
+        }
+    }
+    return res;
+}
+
 // === Menu déroulant (filtre booster) ===
 // Construire dynamiquement la liste des boosters disponibles à partir de la base
 dropdown_items = [];
@@ -60,6 +86,7 @@ array_push(dropdown_items, "Tout");
 var _seenBoosters = ds_map_create();
 ds_map_add(_seenBoosters, string_lower("Tout"), true);
 var _cardsForBoosters = dbGetAllCards();
+_cardsForBoosters = filterOutTokens(_cardsForBoosters);
 for (var i = 0; i < array_length(_cardsForBoosters); i++) {
     var c = _cardsForBoosters[i];
     if (variable_struct_exists(c, "booster")) {
@@ -227,6 +254,19 @@ function displayFilteredCards() {
             cardInstance.description = (card.description != undefined) ? card.description : "";
             cardInstance.rarity = (card.rarity != undefined) ? card.rarity : "commun";
             cardInstance.archetype = (card.archetype != undefined) ? card.archetype : (variable_instance_exists(cardInstance, "archetype") ? cardInstance.archetype : "");
+
+            // Définir la limite d'exemplaires pour affichage depuis l'objet uniquement
+            // Si l'objet possède déjà la variable 'limited', on la respecte; sinon on met 3 par défaut
+            if (!variable_instance_exists(cardInstance, "limited")) {
+                cardInstance.limited = 3;
+            } else {
+                // Borner au besoin
+                var lim_try = real(cardInstance.limited);
+                if (!is_real(lim_try)) lim_try = 3;
+                if (lim_try < 1) lim_try = 1;
+                if (lim_try > 3) lim_try = 3;
+                cardInstance.limited = lim_try;
+            }
             // Résoudre et valider le sprite; fallback si introuvable
             var sprIndex = asset_get_index(card.sprite);
             if (sprIndex != -1) {
@@ -388,7 +428,7 @@ function selectCardByName(cardName) {
     // S'assurer que la base est chargée
     if (!cardsLoaded) {
         cardsLoaded = true;
-        allCards = dbGetAllCards();
+        allCards = filterOutTokens(dbGetAllCards());
         if (!variable_global_exists("sort_mode") || global.sort_mode == "none") {
             global.sort_mode = "alpha";
             global.sort_descending = false;
@@ -463,7 +503,7 @@ show_debug_message("### oCardViewer: Avant verification oDataBase");
 if (instance_exists(oDataBase)) {
     show_debug_message("### oCardViewer: oDataBase existe, recuperation des cartes...");
     // Initialiser la liste des cartes depuis la base
-    allCards = dbGetAllCards();
+    allCards = filterOutTokens(dbGetAllCards());
     cardsLoaded = true;
     // Initialiser tri/ordre par défaut si nécessaire
     if (!variable_global_exists("sort_mode") || global.sort_mode == "none") {

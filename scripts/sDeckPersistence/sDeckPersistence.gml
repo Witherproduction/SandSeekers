@@ -671,6 +671,87 @@ function remove_card_from_favorites(card_name) {
     return false;
 }
 
+/// @function get_max_copies_for_card(cardName, object_id)
+/// @description Retourne la limite d'exemplaires autorisés pour une carte (champ `limited`), défaut 3
+function get_max_copies_for_card(cardName, object_id) {
+    var DEFAULT_MAX = 3;
+    var maxCopies = DEFAULT_MAX;
+    var db = getDatabase();
+    if (db != noone && instance_exists(db)) {
+        var card = noone;
+        if (object_id != "") {
+            var allCards = dbGetAllCards();
+            for (var i = 0; i < array_length(allCards); i++) {
+                if (variable_struct_exists(allCards[i], "objectId") && allCards[i].objectId == object_id) {
+                    card = allCards[i];
+                    break;
+                }
+            }
+        }
+        if (card == noone) {
+            var matches = dbGetCardsByName(cardName);
+            for (var m = 0; m < array_length(matches); m++) {
+                if (variable_struct_exists(matches[m], "name") && matches[m].name == cardName) {
+                    card = matches[m];
+                    break;
+                }
+            }
+        }
+    // 1) Priorité: lire la variable depuis l'instance sélectionnée (objet de carte réel)
+    if (variable_instance_exists(self, "selectedCard") && self.selectedCard != noone && instance_exists(self.selectedCard)) {
+        if (variable_instance_exists(self.selectedCard, "limited")) {
+            var lim_inst = real(self.selectedCard.limited);
+            if (is_real(lim_inst)) {
+                if (lim_inst < 1) lim_inst = 1;
+                if (lim_inst > 3) lim_inst = 3;
+                show_debug_message("### get_max_copies_for_card: limite depuis instance = " + string(lim_inst) + " pour '" + string(cardName) + "'");
+                return lim_inst;
+            }
+        }
+    }
+
+    // 2) Fallback: si on a l'objectId, instancier temporairement l'objet et lire 'limited'
+    if (is_string(object_id) && object_id != "") {
+        var obj_index = asset_get_index(object_id);
+        if (obj_index != -1) {
+            var temp = instance_create_layer(-10000, -10000, "Instances", obj_index);
+            if (temp != noone) {
+                var has_lim = variable_instance_exists(temp, "limited");
+                var lim_obj = has_lim ? real(temp.limited) : undefined;
+                instance_destroy(temp);
+                if (has_lim && is_real(lim_obj)) {
+                    if (lim_obj < 1) lim_obj = 1;
+                    if (lim_obj > 3) lim_obj = 3;
+                    show_debug_message("### get_max_copies_for_card: limite depuis objet = " + string(lim_obj) + " pour '" + string(cardName) + "' (" + string(object_id) + ")");
+                    return lim_obj;
+                }
+            }
+        }
+    }
+
+    // 3) Dernier recours: champ 'limited' dans la base JSON (si présent), sinon 3
+    if (db != noone && instance_exists(db)) {
+        var card = noone;
+        var matches = dbGetCardsByName(cardName);
+        for (var m = 0; m < array_length(matches); m++) {
+            if (variable_struct_exists(matches[m], "name") && matches[m].name == cardName) {
+                card = matches[m];
+                break;
+            }
+        }
+        if (card != noone && variable_struct_exists(card, "limited")) {
+            var lim = real(card.limited);
+            if (is_real(lim)) {
+                if (lim < 1) lim = 1;
+                if (lim > 3) lim = 3;
+                maxCopies = lim;
+                show_debug_message("### get_max_copies_for_card: limite depuis DB = " + string(maxCopies) + " pour '" + string(cardName) + "'");
+            }
+        }
+    }
+    return maxCopies;
+}
+
 /// @function add_selected_card_to_deck()
 /// @description Ajoute la carte sélectionnée (par oCollectionCardDisplay) au deck en édition
 function add_selected_card_to_deck() {
@@ -733,25 +814,56 @@ function add_selected_card_to_deck() {
             return false;
         }
     }
+    var added_ok = false;
     with (oDeckBuilder) {
         if (!is_array(cards_list)) { cards_list = []; }
-        // Sauvegarder en format struct si possible (name + objectId), sinon fallback en string
-        if (object_id != "") {
-            array_push(cards_list, { name: cardName, objectId: object_id });
-        } else {
-            array_push(cards_list, cardName);
+
+        // Déterminer la limite d'exemplaires (champ `limited` si présent, sinon 3)
+        var MAX_COPIES = other.get_max_copies_for_card(cardName, object_id);
+        
+        // Compter les exemplaires déjà présents de cette carte
+        var copies = 0;
+        for (var i = 0; i < array_length(cards_list); i++) {
+            var entry = cards_list[i];
+            var entry_name = is_struct(entry) && variable_struct_exists(entry, "name") ? entry.name : string(entry);
+            var entry_oid = is_struct(entry) && variable_struct_exists(entry, "objectId") ? entry.objectId : "";
+
+            var same = false;
+            if (object_id != "" && entry_oid != "") {
+                same = (entry_oid == object_id);
+            } else {
+                same = (entry_name == cardName);
+            }
+            if (same) copies++;
         }
-        if (is_undefined(current_slots)) current_slots = 1;
-        // Tenter d'agrandir les slots si nécessaire (si la méthode existe)
-        if (is_undefined(check_and_add_slot)) {
-            // Pas de méthode locale, ajuster les dimensions minimales
-            current_slots = min(max_cards, max(current_slots, array_length(cards_list)));
+
+        if (copies >= MAX_COPIES) {
+            show_debug_message("### DeckBuilder: limite atteinte (" + string(MAX_COPIES) + ") pour '" + cardName + "'. Ajout refusé.");
+            if (variable_global_exists("debug_message")) {
+                global.debug_message = "Limite de " + string(MAX_COPIES) + " exemplaires atteinte pour " + cardName;
+                global.debug_timer = room_speed * 2;
+            }
+            other.added_ok = false;
         } else {
-            check_and_add_slot();
+            // Sauvegarder en format struct si possible (name + objectId), sinon fallback en string
+            if (object_id != "") {
+                array_push(cards_list, { name: cardName, objectId: object_id });
+            } else {
+                array_push(cards_list, cardName);
+            }
+            if (is_undefined(current_slots)) current_slots = 1;
+            // Tenter d'agrandir les slots si nécessaire (si la méthode existe)
+            if (is_undefined(check_and_add_slot)) {
+                // Pas de méthode locale, ajuster les dimensions minimales
+                current_slots = min(max_cards, max(current_slots, array_length(cards_list)));
+            } else {
+                check_and_add_slot();
+            }
+            show_debug_message("### DeckBuilder: carte ajoutée -> " + cardName + (object_id != "" ? " (" + object_id + ")" : "") + ", total=" + string(array_length(cards_list)));
+            other.added_ok = true;
         }
-        show_debug_message("### DeckBuilder: carte ajoutée -> " + cardName + (object_id != "" ? " (" + object_id + ")" : "") + ", total=" + string(array_length(cards_list)));
     }
-    return true;
+    return added_ok;
 }
 
 /// @function remove_selected_card_from_deck()
@@ -813,4 +925,5 @@ function toggle_favorite_selected_card() {
         if (ok2) show_debug_message("### Favori ajouté: " + cardName);
         return ok2;
     }
+}
 }

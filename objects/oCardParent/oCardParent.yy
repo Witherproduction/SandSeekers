@@ -31,9 +31,6 @@
   "physicsStartAwake":true,
   "properties":[
     {"$GMObjectProperty":"v2","%Name":"isHeroOwner","filters":[],"listItems":[],"multiselect":false,"name":"isHeroOwner","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"0","varType":3,},
-    {"$GMObjectProperty":"v2","%Name":"attack","filters":[],"listItems":[],"multiselect":false,"name":"attack","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"0","varType":1,},
-    {"$GMObjectProperty":"v2","%Name":"defense","filters":[],"listItems":[],"multiselect":false,"name":"defense","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"0","varType":1,},
-    {"$GMObjectProperty":"v2","%Name":"star","filters":[],"listItems":[],"multiselect":false,"name":"star","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"0","varType":1,},
     {"$GMObjectProperty":"v2","%Name":"zone","filters":[],"listItems":[
         "\"\"",
         "\"Deck\"",
@@ -60,31 +57,7 @@
     {"$GMObjectProperty":"v2","%Name":"orientationChangedThisTurn","filters":[],"listItems":[],"multiselect":false,"name":"orientationChangedThisTurn","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"False","varType":3,},
     {"$GMObjectProperty":"v2","%Name":"hasAttackedThisTurn","filters":[],"listItems":[],"multiselect":false,"name":"hasAttackedThisTurn","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"False","varType":3,},
     {"$GMObjectProperty":"v2","%Name":"isFaceDown","filters":[],"listItems":[],"multiselect":false,"name":"isFaceDown","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"False","varType":3,},
-    {"$GMObjectProperty":"v2","%Name":"description","filters":[],"listItems":[
-        "\"\"",
-      ],"multiselect":false,"name":"description","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"\"\"","varType":6,},
-    {"$GMObjectProperty":"v2","%Name":"name","filters":[],"listItems":[
-        "\"\"",
-      ],"multiselect":false,"name":"name","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"\"\"","varType":6,},
-    {"$GMObjectProperty":"v2","%Name":"genre","filters":[],"listItems":[
-        "\"\"",
-        "\"Bete\"",
-        "\"Dragon\"",
-        "\"MortVivant\"",
-        "\"Humanoide\"",
-        "\"Meca\"",
-        "\"Demon\"",
-        "\"Sacre\"",
-        "\"Insecte\"",
-        "\"Elementaire\"",
-      ],"multiselect":false,"name":"genre","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"\"\"","varType":6,},
-    {"$GMObjectProperty":"v2","%Name":"archetype","filters":[],"listItems":[
-        "\"\"",
-      ],"multiselect":false,"name":"archetype","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"\"\"","varType":6,},
     {"$GMObjectProperty":"v2","%Name":"obtenu","filters":[],"listItems":[],"multiselect":false,"name":"obtenu","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"False","varType":3,},
-    {"$GMObjectProperty":"v2","%Name":"rarity","filters":[],"listItems":[
-        "\"\"",
-      ],"multiselect":false,"name":"rarity","rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"resourceType":"GMObjectProperty","resourceVersion":"2.0","value":"\"\"","varType":6,},
   ],
   "resourceType":"GMObject",
   "resourceVersion":"2.0",

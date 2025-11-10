@@ -7,9 +7,6 @@
   "managed":true,
   "name":"oRobotMagnetique",
   "overriddenProperties":[
-    {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"star","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"3",},
-    {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"defense","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"1000",},
-    {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"attack","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"1500",},
     {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"oCardParent","path":"objects/oCardParent/oCardParent.yy",},"propertyId":{"name":"type","path":"objects/oCardParent/oCardParent.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"\"Monster\"",},
   ],
   "parent":{
