@@ -422,8 +422,8 @@ unSelect = function(card) {
     if (!instance_exists(card)) return;
     if(card.zone == "FieldSelected") {
         card.zone = "Field";
-        card.image_xscale = 0.275;
-        card.image_yscale = 0.275;
+        card.image_xscale = 0.2475;
+        card.image_yscale = 0.2475;
         UIManager.hidePositionButton();
         UIManager.hideEffectButton();
         card.y += 10;

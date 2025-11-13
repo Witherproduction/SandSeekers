@@ -27,8 +27,8 @@ function summonToken(card, effect, context) {
     token.is_player_card = ownerIsHero;
     token.fieldPosition = pos;
     fieldMgr.add(token);
-    token.image_xscale = 0.275;
-    token.image_yscale = 0.275;
+    token.image_xscale = 0.2475;
+    token.image_yscale = 0.2475;
     token.zone = "Field";
     token.depth = 0;
     token.orientation = "Attack";
@@ -105,8 +105,8 @@ function activateSpellByCriteria(card, effect, context) {
     spellCard.y = Y;
     spellCard.fieldPosition = pos;
     fieldMgr.add(spellCard);
-    spellCard.image_xscale = 0.275;
-    spellCard.image_yscale = 0.275;
+    spellCard.image_xscale = 0.2475;
+    spellCard.image_yscale = 0.2475;
     spellCard.zone = "Field";
     spellCard.depth = 0;
     spellCard.orientation = "Attack";

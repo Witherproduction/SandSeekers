@@ -63,7 +63,10 @@ if (total == 0) {
     return;
 }
 
-var count = min(total - scrollIndex, visible_cards); // Nombre de cartes réellement affichées
+var maxScroll = max(0, total - visible_cards);
+scrollIndex = clamp(scrollIndex, 0, maxScroll);
+var avail = max(0, total - scrollIndex);
+var count = min(avail, visible_cards);
 
 for (var i = 0; i < count; i++) {
     var cardData = list[total - 1 - (i + scrollIndex)]; // On parcourt depuis la dernière carte ajoutée
@@ -81,6 +84,141 @@ for (var i = 0; i < count; i++) {
         var draw_y = draw_y_top_left + (card_h / scale) * scale / 2; // (card_h / scale) est la hauteur originale du sprite
 
         draw_sprite_ext(cardData.sprite_index, cardData.image_index, draw_x, draw_y, scale, scale, 0, c_white, 1);
+        var s = scale;
+        var spr = cardData.sprite_index;
+        var cw = sprite_get_width(spr) * s;
+        var ch = sprite_get_height(spr) * s;
+        var name_x1 = 24,  name_y1 = 16;  var name_x2 = 387, name_y2 = 59;
+        var star_x1 = 388, star_y1 = 16;  var star_x2 = 438, star_y2 = 60;
+        var genre_x1 = 29, genre_y1 = 394; var genre_x2 = 223, genre_y2 = 419;
+        var arch_x1  = 228, arch_y1  = 394; var arch_x2  = 422, arch_y2  = 419;
+        var desc_x1  = 23,  desc_y1  = 438; var desc_x2  = 421, desc_y2  = 592;
+        var is_magic = (variable_struct_exists(cardData, "cardType") && string_lower(string(cardData.cardType)) == "magic");
+        if (font_exists(fontCardText)) draw_set_font(fontCardText);
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+        draw_set_color(c_black);
+        var fit_line = function(text, max_px, rw, rh) {
+            var base_line_h = string_height("Ag");
+            var w0 = string_width(text);
+            var h0 = base_line_h;
+            var s_max = (h0 > 0) ? max_px / h0 : 1;
+            var s_w = (w0 > 0) ? rw / w0 : s_max;
+            var s_h = (h0 > 0) ? rh / h0 : s_max;
+            return min(s_max, s_w, s_h);
+        };
+        var fit_block = function(text, max_px, rw, rh) {
+            var base_line_h = string_height("Ag");
+            var sc = (base_line_h > 0) ? max_px / base_line_h : 1;
+            for (var it = 0; it < 3; it++) {
+                var sep = base_line_h;
+                var w_eff = (sc > 0) ? (rw / sc) : rw;
+                var h = string_height_ext(text, sep, w_eff);
+                if (h <= 0) break;
+                var s_h2 = rh / h;
+                sc = min(sc, s_h2);
+            }
+            return sc;
+        };
+        var pad = 0;
+        var rel = s / 0.6;
+        var mar = 7;
+        var tlx = draw_x - cw * 0.5;
+        var tly = draw_y - ch * 0.5;
+        if (variable_struct_exists(cardData, "name")) {
+            var tx = string(cardData.name);
+            var rw = (name_x2 - name_x1) * s - pad * 2 - mar * 2;
+            var rh = (name_y2 - name_y1) * s - pad * 2;
+            var sc = fit_line(tx, 20 * rel, rw, rh);
+            var left = tlx + name_x1 * s + pad + mar;
+            var top  = tly + name_y1 * s + pad;
+            draw_text_transformed(left, top + 2, tx, sc, sc, 0);
+        }
+        if (!is_magic && variable_struct_exists(cardData, "star")) {
+            var tx = string(cardData.star);
+            var rw = (star_x2 - star_x1) * s - pad * 2;
+            var rh = (star_y2 - star_y1) * s - pad * 2;
+            var sc = fit_line(tx, 20 * rel, rw, rh);
+            var left = tlx + star_x1 * s + pad;
+            var top  = tly + star_y1 * s + pad;
+            var wsc  = string_width(tx) * sc;
+            var cx   = left + max(0, (rw - wsc) * 0.5);
+            draw_text_transformed(cx, top + 2, tx, sc, sc, 0);
+        }
+        if (variable_struct_exists(cardData, "genre")) {
+            var tx = string(cardData.genre);
+            var rw = (genre_x2 - genre_x1) * s - pad * 2 - mar * 2;
+            var rh = (genre_y2 - genre_y1) * s - pad * 2;
+            var sc = fit_line(tx, 16 * rel, rw, rh);
+            var left_g = tlx + genre_x1 * s + pad + mar;
+            var top_g  = tly + genre_y1 * s + pad;
+            draw_text_transformed(left_g, top_g + 0, tx, sc, sc, 0);
+        }
+        if (variable_struct_exists(cardData, "archetype")) {
+            var tx = string(cardData.archetype);
+            var rw = (arch_x2 - arch_x1) * s - pad * 2 - mar * 2;
+            var rh = (arch_y2 - arch_y1) * s - pad * 2;
+            var sc = fit_line(tx, 16 * rel, rw, rh);
+            var left_a = tlx + arch_x1 * s + pad + mar;
+            var top_a  = tly + arch_y1 * s + pad;
+            draw_text_transformed(left_a, top_a + 0, tx, sc, sc, 0);
+        }
+        if (variable_struct_exists(cardData, "description")) {
+            var tx = string(cardData.description);
+            var rw = (desc_x2 - desc_x1) * s - pad * 2 - mar * 2;
+            var rh = (desc_y2 - desc_y1) * s - pad * 2;
+            var sc = fit_block(tx, 24 * rel, rw, rh);
+            var left = tlx + desc_x1 * s + pad + mar;
+            var top  = tly + desc_y1 * s + pad;
+            var base_h = string_height("Ag");
+            var line_h = base_h * sc;
+            var space_w = string_width(" ") * sc;
+            var dy = top + 2;
+            var paragraphs = string_split(tx, "\n");
+            for (var p_i2 = 0; p_i2 < array_length(paragraphs); p_i2++) {
+                var words = string_split(paragraphs[p_i2], " ");
+                var ii = 0;
+                while (ii < array_length(words)) {
+                    var line_words = [];
+                    var count = 0;
+                    var line_w = 0;
+                    while (ii < array_length(words)) {
+                        var w = words[ii];
+                        var ww = string_width(w) * sc;
+                        var plus_space = (count > 0) ? space_w : 0;
+                        if (line_w + plus_space + ww <= rw) {
+                            line_words[count] = w;
+                            count += 1;
+                            line_w += plus_space + ww;
+                            ii += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    var gaps = max(0, count - 1);
+                    var extra_gap = 0;
+                    if (gaps > 0 && ii < array_length(words)) {
+                        var extra = rw - line_w;
+                        var extra_raw = (extra > 0) ? (extra / gaps) : 0;
+                        var max_extra_ratio = 0.5;
+                        extra_gap = min(extra_raw, string_width(" ") * sc * max_extra_ratio);
+                    }
+                    var dx = left;
+                    for (var j2 = 0; j2 < count; j2++) {
+                        var wj = line_words[j2];
+                        draw_text_transformed(dx, dy, wj, sc, sc, 0);
+                        var wjw = string_width(wj) * sc;
+                        if (j2 < count - 1) {
+                            dx += wjw + space_w + extra_gap;
+                        } else {
+                            dx += wjw;
+                        }
+                    }
+                    dy += line_h;
+                    if (dy + line_h > top + rh) break;
+                }
+            }
+        }
     }
 }
 
@@ -281,5 +419,145 @@ if (selectedCard != noone) {
         draw_sprite_ext(card.sprite_index, 0, preview_draw_x, preview_draw_y, preview_scale, preview_scale, 0, c_white, 1);
     } else {
         draw_sprite_ext(card.sprite_index, card.image_index, preview_draw_x, preview_draw_y, preview_scale, preview_scale, 0, c_white, 1);
+    }
+
+    var face_down = (variable_instance_exists(card, "isFaceDown") && card.isFaceDown);
+    var can_show_overlay = (!face_down) || (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
+    if (can_show_overlay) {
+        var spr = card.sprite_index;
+        var s = preview_scale;
+        var cw = sprite_get_width(spr) * s;
+        var ch = sprite_get_height(spr) * s;
+        var tlx = preview_draw_x - cw * 0.5;
+        var tly = preview_draw_y - ch * 0.5;
+        var name_x1 = 24,  name_y1 = 16;  var name_x2 = 387, name_y2 = 59;
+        var star_x1 = 388, star_y1 = 16;  var star_x2 = 438, star_y2 = 60;
+        var genre_x1 = 29, genre_y1 = 394; var genre_x2 = 223, genre_y2 = 419;
+        var arch_x1  = 228, arch_y1  = 394; var arch_x2  = 422, arch_y2  = 419;
+        var desc_x1  = 23,  desc_y1  = 438; var desc_x2  = 421, desc_y2  = 592;
+        var is_magic = object_is_ancestor(card.object_index, oCardMagic) || (variable_instance_exists(card, "type") && string_lower(string(card.type)) == "magic");
+        if (font_exists(fontCardText)) draw_set_font(fontCardText);
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+        draw_set_color(c_black);
+        var fit_line = function(text, max_px, rw, rh) {
+            var base_line_h = string_height("Ag");
+            var w0 = string_width(text);
+            var h0 = base_line_h;
+            var s_max = (h0 > 0) ? max_px / h0 : 1;
+            var s_w = (w0 > 0) ? rw / w0 : s_max;
+            var s_h = (h0 > 0) ? rh / h0 : s_max;
+            return min(s_max, s_w, s_h);
+        };
+        var fit_block = function(text, max_px, rw, rh) {
+            var base_line_h = string_height("Ag");
+            var sc = (base_line_h > 0) ? max_px / base_line_h : 1;
+            for (var it = 0; it < 3; it++) {
+                var sep = base_line_h;
+                var w_eff = (sc > 0) ? (rw / sc) : rw;
+                var h = string_height_ext(text, sep, w_eff);
+                if (h <= 0) break;
+                var s_h2 = rh / h;
+                sc = min(sc, s_h2);
+            }
+            return sc;
+        };
+        var pad = 0;
+        var rel = s / 0.6;
+        var mar = 7;
+        if (variable_instance_exists(card, "name")) {
+            var tx = string(card.name);
+            var rw = (name_x2 - name_x1) * s - pad * 2 - mar * 2;
+            var rh = (name_y2 - name_y1) * s - pad * 2;
+            var sc = fit_line(tx, 20 * rel, rw, rh);
+            var left = tlx + name_x1 * s + pad + mar;
+            var top  = tly + name_y1 * s + pad;
+            draw_text_transformed(left, top + 2, tx, sc, sc, 0);
+        }
+        if (!is_magic && variable_instance_exists(card, "star")) {
+            var tx = string(card.star);
+            var rw = (star_x2 - star_x1) * s - pad * 2;
+            var rh = (star_y2 - star_y1) * s - pad * 2;
+            var sc = fit_line(tx, 20 * rel, rw, rh);
+            var left = tlx + star_x1 * s + pad;
+            var top  = tly + star_y1 * s + pad;
+            var wsc  = string_width(tx) * sc;
+            var cx   = left + max(0, (rw - wsc) * 0.5);
+            draw_text_transformed(cx, top + 2, tx, sc, sc, 0);
+        }
+        if (variable_instance_exists(card, "genre")) {
+            var tx = string(card.genre);
+            var rw = (genre_x2 - genre_x1) * s - pad * 2 - mar * 2;
+            var rh = (genre_y2 - genre_y1) * s - pad * 2;
+            var sc = fit_line(tx, 16 * rel, rw, rh);
+            var left_g = tlx + genre_x1 * s + pad + mar;
+            var top_g  = tly + genre_y1 * s + pad;
+            draw_text_transformed(left_g, top_g + 0, tx, sc, sc, 0);
+        }
+        if (variable_instance_exists(card, "archetype")) {
+            var tx = string(card.archetype);
+            var rw = (arch_x2 - arch_x1) * s - pad * 2 - mar * 2;
+            var rh = (arch_y2 - arch_y1) * s - pad * 2;
+            var sc = fit_line(tx, 16 * rel, rw, rh);
+            var left_a = tlx + arch_x1 * s + pad + mar;
+            var top_a  = tly + arch_y1 * s + pad;
+            draw_text_transformed(left_a, top_a + 0, tx, sc, sc, 0);
+        }
+        if (variable_instance_exists(card, "description")) {
+            var tx = string(card.description);
+            var rw = (desc_x2 - desc_x1) * s - pad * 2 - mar * 2;
+            var rh = (desc_y2 - desc_y1) * s - pad * 2;
+            var sc = fit_block(tx, 24 * rel, rw, rh);
+            var left = tlx + desc_x1 * s + pad + mar;
+            var top  = tly + desc_y1 * s + pad;
+            var base_h = string_height("Ag");
+            var line_h = base_h * sc;
+            var space_w = string_width(" ") * sc;
+            var dy = top + 2;
+            var paragraphs = string_split(tx, "\n");
+            for (var p_i2 = 0; p_i2 < array_length(paragraphs); p_i2++) {
+                var words = string_split(paragraphs[p_i2], " ");
+                var ii = 0;
+                while (ii < array_length(words)) {
+                    var line_words = [];
+                    var count = 0;
+                    var line_w = 0;
+                    while (ii < array_length(words)) {
+                        var w = words[ii];
+                        var ww = string_width(w) * sc;
+                        var plus_space = (count > 0) ? space_w : 0;
+                        if (line_w + plus_space + ww <= rw) {
+                            line_words[count] = w;
+                            count += 1;
+                            line_w += plus_space + ww;
+                            ii += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    var gaps = max(0, count - 1);
+                    var extra_gap = 0;
+                    if (gaps > 0 && ii < array_length(words)) {
+                        var extra = rw - line_w;
+                        var extra_raw = (extra > 0) ? (extra / gaps) : 0;
+                        var max_extra_ratio = 0.5;
+                        extra_gap = min(extra_raw, string_width(" ") * sc * max_extra_ratio);
+                    }
+                    var dx = left;
+                    for (var j2 = 0; j2 < count; j2++) {
+                        var wj = line_words[j2];
+                        draw_text_transformed(dx, dy, wj, sc, sc, 0);
+                        var wjw = string_width(wj) * sc;
+                        if (j2 < count - 1) {
+                            dx += wjw + space_w + extra_gap;
+                        } else {
+                            dx += wjw;
+                        }
+                    }
+                    dy += line_h;
+                    if (dy + line_h > top + rh) break;
+                }
+            }
+        }
     }
 }

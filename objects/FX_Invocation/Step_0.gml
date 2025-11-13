@@ -38,16 +38,17 @@ if (!finished_move) {
                 x = other.target_x;
                 y = other.target_y;
                 fieldPosition = other.field_position;
-                image_xscale = 0.275;
-                image_yscale = 0.275;
+                var is_magic_card = (variable_instance_exists(self, "type") && string(type) == "Magic");
+                image_xscale = is_magic_card ? 0.2475 : 0.275;
+                image_yscale = is_magic_card ? 0.2475 : 0.275;
                 zone = "Field";
-                depth = 0;
+                depth = ((variable_instance_exists(self, "type") && string(type) == "Monster") ? -1 : 0);
 
                 // Orientation/face selon camp et mode
                 if (ownerHero) {
                     if (ctype == "Monster" && mode == "Set") {
                         orientation = "Defense";
-                        image_angle = -90;
+                        image_angle = 90;
                         image_index = 1;
                         isFaceDown = true;
                     }

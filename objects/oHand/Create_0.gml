@@ -39,7 +39,8 @@ updateDisplay = function() {
         }
         
         card.zone = "Hand";
-        card.image_angle = 0;
+        card.image_angle = isHeroOwner ? 0 : 180;
+        card.depth = -i;
         if(nbCards <= 5)
             card.x = x + offset + i * cardWidth + i * spaceBetweenCards;
         else {
@@ -124,9 +125,9 @@ summon = function(card, XYPos, desiredOrientation = "") {
     // Déterminer l'orientation/face du fantôme selon le mode et le camp
     var ghost_angle = 0;
     var ghost_index = card.image_index;
-    if (isHeroOwner) {
+        if (isHeroOwner) {
         if (card.type == "Monster" && mode_resolved == "Set") {
-            ghost_angle = -90;
+            ghost_angle = 90;
             ghost_index = 1; // face cachée
         }
         else if (card.type == "Monster" && (mode_resolved == "Summon" || mode_resolved == "SpecialSummon")) {
@@ -188,16 +189,16 @@ summon = function(card, XYPos, desiredOrientation = "") {
         fieldMgrSummon.add(card);
 
         // Mise à l'échelle/zone
-        card.image_xscale = 0.275;
-        card.image_yscale = 0.275;
+        card.image_xscale = ((string(card.type) == "Magic") ? 0.2475 : 0.275);
+        card.image_yscale = ((string(card.type) == "Magic") ? 0.2475 : 0.275);
         card.zone = "Field";
-        card.depth = 0;
+        card.depth = ((variable_instance_exists(card, "type") && string(card.type) == "Monster") ? -1 : 0);
 
         // Orientation/face selon camp et mode
         if (isHeroOwner) {
             if (card.type == "Monster" && mode_resolved == "Set") {
                 card.orientation = "Defense";
-                card.image_angle = -90;
+                card.image_angle = 90;
                 card.image_index = 1;
                 card.isFaceDown = true;
             }

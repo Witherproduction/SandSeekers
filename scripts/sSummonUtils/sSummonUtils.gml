@@ -99,8 +99,8 @@ function specialSummonNamed(card, effect, context) {
     cardToSummon.fieldPosition = pos;
     fieldMgr.add(cardToSummon);
 
-    cardToSummon.image_xscale = 0.275;
-    cardToSummon.image_yscale = 0.275;
+    cardToSummon.image_xscale = 0.2475;
+    cardToSummon.image_yscale = 0.2475;
     cardToSummon.zone = "Field";
     cardToSummon.depth = 0;
     cardToSummon.orientation = "Attack";

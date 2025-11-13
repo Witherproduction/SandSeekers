@@ -26,7 +26,7 @@ if (zone == "Field" || zone == "FieldSelected") {
         var card_width = sprite_get_width(sprite_index) * image_xscale;
         var card_height = sprite_get_height(sprite_index) * image_yscale;
 
-        var stats_y = y + (card_height / 2) - 15; // 15 pixels du bas de la carte
+        var stats_y = y + (card_height / 2) + 6;
         var attack_x = x - (card_width / 4); // Côté gauche
         var defense_x = x + (card_width / 4); // Côté droit
 
@@ -41,18 +41,7 @@ if (zone == "Field" || zone == "FieldSelected") {
         var baseDefense = defense;
 
         var attack_color = c_white;
-        if (dispAttack > baseAttack) {
-            attack_color = c_green;
-        } else if (dispAttack < baseAttack) {
-            attack_color = c_red;
-        }
-
         var defense_color = c_white;
-        if (dispDefense > baseDefense) {
-            defense_color = c_green;
-        } else if (dispDefense < baseDefense) {
-            defense_color = c_red;
-        }
 
         // Texte de l'attaque (blanc/vert/rouge)
         draw_set_color(attack_color);
