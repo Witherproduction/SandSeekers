@@ -119,6 +119,11 @@ summon = function(card, XYPos, desiredOrientation = "") {
     }
     updateDisplay();
 
+    card.zone = "Field";
+    if (instance_exists(selectManager) && selectManager.selected == card) {
+        selectManager.remove();
+    }
+
     // Cache la carte réelle pendant l'animation
     card.visible = false;
 

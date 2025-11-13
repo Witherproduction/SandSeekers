@@ -177,8 +177,11 @@ if (variable_instance_exists(self, "zone") && (zone == "Hand" || zone == "HandSe
             var rw = (name_x2 - name_x1) * s - pad * 2 - mar * 2;
             var rh = (name_y2 - name_y1) * s - pad * 2;
             var sc = fit_line(tx, 20 * rel, rw, rh);
+            sc = round(sc * 20) / 20;
             var left = tlx + name_x1 * s + pad + mar;
             var top  = tly + name_y1 * s + pad;
+            left = round(left);
+            top  = round(top);
             draw_text_transformed(left, top + 2, tx, sc, sc, angle_draw);
         }
         if (!is_magic && variable_instance_exists(self, "star")) {
@@ -186,10 +189,13 @@ if (variable_instance_exists(self, "zone") && (zone == "Hand" || zone == "HandSe
             var rw = (star_x2 - star_x1) * s - pad * 2;
             var rh = (star_y2 - star_y1) * s - pad * 2;
             var sc = fit_line(tx, 20 * rel, rw, rh);
+            sc = round(sc * 20) / 20;
             var left = tlx + star_x1 * s + pad;
             var top  = tly + star_y1 * s + pad;
             var wsc  = string_width(tx) * sc;
             var cx   = left + max(0, (rw - wsc) * 0.5);
+            cx = round(cx);
+            top = round(top);
             draw_text_transformed(cx, top + 2, tx, sc, sc, angle_draw);
         }
         if (variable_instance_exists(self, "genre")) {
@@ -197,74 +203,48 @@ if (variable_instance_exists(self, "zone") && (zone == "Hand" || zone == "HandSe
             var rw = (genre_x2 - genre_x1) * s - pad * 2 - mar * 2;
             var rh = (genre_y2 - genre_y1) * s - pad * 2;
             var sc = fit_line(tx, 16 * rel, rw, rh);
+            sc = round(sc * 20) / 20;
             var left_g = tlx + genre_x1 * s + pad + mar;
             var top_g  = tly + genre_y1 * s + pad;
-            draw_text_transformed(left_g, top_g + 0, tx, sc, sc, angle_draw);
+            left_g = round(left_g);
+            top_g  = round(top_g);
+            draw_text_transformed(left_g, top_g + 2, tx, sc, sc, angle_draw);
         }
         if (variable_instance_exists(self, "archetype")) {
             var tx = string(archetype);
             var rw = (arch_x2 - arch_x1) * s - pad * 2 - mar * 2;
             var rh = (arch_y2 - arch_y1) * s - pad * 2;
             var sc = fit_line(tx, 16 * rel, rw, rh);
+            sc = round(sc * 20) / 20;
             var left_a = tlx + arch_x1 * s + pad + mar;
             var top_a  = tly + arch_y1 * s + pad;
-            draw_text_transformed(left_a, top_a + 0, tx, sc, sc, angle_draw);
+            left_a = round(left_a);
+            top_a  = round(top_a);
+            draw_text_transformed(left_a, top_a + 2, tx, sc, sc, angle_draw);
         }
         if (variable_instance_exists(self, "description")) {
             var tx = string(description);
             var rw = (desc_x2 - desc_x1) * s - pad * 2 - mar * 2;
             var rh = (desc_y2 - desc_y1) * s - pad * 2;
-            var sc = fit_block(tx, 24 * rel, rw, rh);
             var left = tlx + desc_x1 * s + pad + mar;
             var top  = tly + desc_y1 * s + pad;
             var base_h = string_height("Ag");
-            var line_h = base_h * sc;
-            var space_w = string_width(" ") * sc;
-            var dy = top + 2;
-            var paragraphs = string_split(tx, "\n");
-            for (var p_i = 0; p_i < array_length(paragraphs); p_i++) {
-                var words = string_split(paragraphs[p_i], " ");
-                var i = 0;
-                while (i < array_length(words)) {
-                    var line_words = [];
-                    var count = 0;
-                    var line_w = 0;
-                    while (i < array_length(words)) {
-                        var w = words[i];
-                        var ww = string_width(w) * sc;
-                        var plus_space = (count > 0) ? space_w : 0;
-                        if (line_w + plus_space + ww <= rw) {
-                            line_words[count] = w;
-                            count += 1;
-                            line_w += plus_space + ww;
-                            i += 1;
-                        } else {
-                            break;
-                        }
-                    }
-                    var gaps = max(0, count - 1);
-                    var extra_gap = 0;
-                    if (gaps > 0 && i < array_length(words)) {
-                        var extra = rw - line_w;
-                        var extra_raw = (extra > 0) ? (extra / gaps) : 0;
-                        var max_extra_ratio = 0.5;
-                        extra_gap = min(extra_raw, string_width(" ") * sc * max_extra_ratio);
-                    }
-                    var dx = left;
-                    for (var j = 0; j < count; j++) {
-                        var wj = line_words[j];
-                        draw_text_transformed(dx, dy, wj, sc, sc, angle_draw);
-                        var wjw = string_width(wj) * sc;
-                        if (j < count - 1) {
-                            dx += wjw + space_w + extra_gap;
-                        } else {
-                            dx += wjw;
-                        }
-                    }
-                    dy += line_h;
-                    if (dy + line_h > top + rh) break;
-                }
+            var sc0 = (base_h > 0) ? (20 * rel) / base_h : 1;
+            var sc = sc0;
+            for (var ii = 0; ii < 8; ii++) {
+                var w_pre = (sc > 0) ? (rw / sc) : rw;
+                var h_un = string_height_ext(tx, base_h, w_pre);
+                var h_sc = h_un * sc;
+                if (h_sc <= rh) break;
+                var k = rh / max(1, h_sc);
+                sc *= max(0.6, min(0.95, k));
+                sc = min(sc, sc0);
             }
+            sc = round(sc * 20) / 20;
+            left = round(left);
+            top  = round(top);
+            var w_eff = round(rw / sc);
+            draw_text_ext_transformed(left, top + 2, tx, base_h, w_eff, sc, sc, angle_draw);
         }
         if (use_matrix) {
             matrix_set(matrix_world, prev_world);

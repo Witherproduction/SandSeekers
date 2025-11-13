@@ -27,8 +27,11 @@ if (zone == "Field" || zone == "FieldSelected") {
         var card_height = sprite_get_height(sprite_index) * image_yscale;
 
         var stats_y = y + (card_height / 2) + 6;
-        var attack_x = x - (card_width / 4); // Côté gauche
-        var defense_x = x + (card_width / 4); // Côté droit
+        var attack_x = x - (card_width / 4);
+        var defense_x = x + (card_width / 4);
+        stats_y = round(stats_y);
+        attack_x = round(attack_x);
+        defense_x = round(defense_x);
 
         // Ancien comportement: pas de rotation du texte
         

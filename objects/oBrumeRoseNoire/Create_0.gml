@@ -31,8 +31,8 @@ effects[1] = {
 effects[2] = {
     trigger: TRIGGER_ON_DESTROY,
     effect_type: EFFECT_SEARCH,
-    search_location: "Graveyard", // Recherche dans le cimetière
-    value: 2,
+    search_sources: ["Graveyard"],
+    max_targets: 2,
     search_criteria: {
         archetype: "Rose noire"
     },

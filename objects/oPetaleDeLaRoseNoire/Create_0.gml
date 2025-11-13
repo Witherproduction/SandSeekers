@@ -18,9 +18,10 @@ array_push(effects, {
     id: "petale_gy_search_to_deck",
     trigger: TRIGGER_ENTER_GRAVEYARD,
     effect_type: EFFECT_SEARCH,
-    search_location: "Graveyard", // Recherche dans le cimetière
+    search_sources: ["Graveyard"],
     destination: "Deck", // Ajoute au deck
     search_criteria: { archetype: "Rose noire", type: "Magic" },
+    random_select: true,
     shuffle_deck: true, // Mélange le deck après l'ajout
     
 });

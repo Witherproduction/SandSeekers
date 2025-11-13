@@ -153,8 +153,11 @@ if (is_array(cardInstances)) {
                 var rw = (name_x2 - name_x1) * s - pad_s * 2 - mar_s * 2;
                 var rh = (name_y2 - name_y1) * s - pad_s * 2;
                 var scale_t = fit_line(tx, 16 * rel, rw, rh);
+                scale_t = round(scale_t * 20) / 20;
                 var left = tlx + name_x1 * s + pad_s + mar_s;
                 var top  = tly + name_y1 * s + pad_s;
+                left = round(left);
+                top  = round(top);
                 draw_text_transformed(left, top + 2, tx, scale_t, scale_t, 0);
             }
 
@@ -164,10 +167,13 @@ if (is_array(cardInstances)) {
                 var rw = (star_x2 - star_x1) * s - pad_s * 2;
                 var rh = (star_y2 - star_y1) * s - pad_s * 2;
                 var scale_t = fit_line(tx, 14 * rel, rw, rh);
+                scale_t = round(scale_t * 20) / 20;
                 var left = tlx + star_x1 * s + pad_s;
                 var top  = tly + star_y1 * s + pad_s;
                 var wsc  = string_width(tx) * scale_t;
                 var cx   = left + max(0, (rw - wsc) * 0.5);
+                cx = round(cx);
+                top = round(top);
                 draw_text_transformed(cx, top + 2, tx, scale_t, scale_t, 0);
             }
 
@@ -177,7 +183,12 @@ if (is_array(cardInstances)) {
                 var rw = (genre_x2 - genre_x1) * s - pad_s * 2 - mar_s * 2;
                 var rh = (genre_y2 - genre_y1) * s - pad_s * 2;
                 var scale_t = fit_line(tx, 12 * rel, rw, rh);
-                draw_text_transformed(tlx + genre_x1 * s + pad_s + mar_s, tly + genre_y1 * s + pad_s + 2, tx, scale_t, scale_t, 0);
+                scale_t = round(scale_t * 20) / 20;
+                var gx = tlx + genre_x1 * s + pad_s + mar_s;
+                var gy = tly + genre_y1 * s + pad_s;
+                gx = round(gx);
+                gy = round(gy);
+                draw_text_transformed(gx, gy + 2, tx, scale_t, scale_t, 0);
             }
 
             // ARCHETYPE
@@ -186,7 +197,12 @@ if (is_array(cardInstances)) {
                 var rw = (arch_x2 - arch_x1) * s - pad_s * 2 - mar_s * 2;
                 var rh = (arch_y2 - arch_y1) * s - pad_s * 2;
                 var scale_t = fit_line(tx, 12 * rel, rw, rh);
-                draw_text_transformed(tlx + arch_x1 * s + pad_s + mar_s, tly + arch_y1 * s + pad_s + 2, tx, scale_t, scale_t, 0);
+                scale_t = round(scale_t * 20) / 20;
+                var ax = tlx + arch_x1 * s + pad_s + mar_s;
+                var ay = tly + arch_y1 * s + pad_s;
+                ax = round(ax);
+                ay = round(ay);
+                draw_text_transformed(ax, ay + 2, tx, scale_t, scale_t, 0);
             }
 
             // DESCRIPTION
@@ -196,13 +212,31 @@ if (is_array(cardInstances)) {
                 var rh = (desc_y2 - desc_y1) * s - pad_s * 2;
                 var left = tlx + desc_x1 * s + pad_s + mar_s;
                 var top  = tly + desc_y1 * s + pad_s;
-                draw_block(tx, 12 * rel, rw, rh, left, top + 2);
+                // Remplacer par wrap natif avec quantification et arrondi
+                var base_h = string_height("Ag");
+                var sc0 = (base_h > 0) ? (12 * rel) / base_h : 1;
+                var sc = sc0;
+                for (var ii = 0; ii < 5; ii++) {
+                    var w_pre = (sc > 0) ? (rw / sc) : rw;
+                    var h_un = string_height_ext(tx, base_h, w_pre);
+                    var h_sc = h_un * sc;
+                    if (h_sc <= rh) break;
+                    var k = rh / max(1, h_sc);
+                    sc *= max(0.6, min(0.95, k));
+                    sc = min(sc, sc0);
+                }
+                sc = round(sc * 20) / 20;
+                left = round(left);
+                top  = round(top);
+                var w_eff = round(rw / sc);
+                draw_text_ext_transformed(left, top + 2, tx, base_h, w_eff, sc, sc, 0);
             }
 
             // ATK/DEF — valeurs séparées, centrées H/V, taille réduite
             if (!is_magic) {
                 var base_line_h = string_height("Ag");
-                var scale_num = (base_line_h > 0) ? (10 * rel) / base_line_h : 1;
+                var scale_num = (base_line_h > 0) ? (12 * rel) / base_line_h : 1;
+                scale_num = round(scale_num * 20) / 20;
 
                 if (variable_instance_exists(inst, "attack")) {
                     var txa = string(inst.attack);
@@ -214,6 +248,8 @@ if (is_array(cardInstances)) {
                     var hsc_a  = base_line_h * scale_num;
                     var cx_a   = left_a + max(0, (rw_a - wsc_a) * 0.5);
                     var cy_a   = top_a  + max(0, (rh_a - hsc_a) * 0.5);
+                    cx_a = round(cx_a);
+                    cy_a = round(cy_a);
                     draw_text_transformed(cx_a, cy_a, txa, scale_num, scale_num, 0);
                 }
 
@@ -227,6 +263,8 @@ if (is_array(cardInstances)) {
                     var hsc_d  = base_line_h * scale_num;
                     var cx_d   = left_d + max(0, (rw_d - wsc_d) * 0.5);
                     var cy_d   = top_d  + max(0, (rh_d - hsc_d) * 0.5);
+                    cx_d = round(cx_d);
+                    cy_d = round(cy_d);
                     draw_text_transformed(cx_d, cy_d, txd, scale_num, scale_num, 0);
                 }
             }

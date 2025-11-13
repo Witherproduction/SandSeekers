@@ -18,7 +18,7 @@ effects = [
     {
         trigger: TRIGGER_ENTER_GRAVEYARD,
         effect_type: EFFECT_SEARCH,
-        search_location: "Graveyard", // Recherche dans le cimetière
+        search_sources: ["Graveyard"],
         destination: "Deck", // Ajoute au deck
         shuffle_deck: true, // Mélange le deck à la fin de l'effet
         search_type: "Magic", // Limite aux cartes Magie

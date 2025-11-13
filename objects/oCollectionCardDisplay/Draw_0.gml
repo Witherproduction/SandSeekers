@@ -184,10 +184,12 @@ if (room == rCollection && selectedCard != noone && instance_exists(selectedCard
             var mar = 7;
             var rw = (name_x2 - name_x1) * s - pad * 2 - mar * 2;
             var rh = (name_y2 - name_y1) * s - pad * 2;
-            // Taille par défaut et coordonnées non arrondies
             var scale = fit_line(tx, 20, rw, rh);
+            scale = round(scale * 20) / 20;
             var left = tlx + name_x1 * s + pad + mar;
             var top  = tly + name_y1 * s + pad;
+            left = round(left);
+            top  = round(top);
             draw_text_transformed(left, top + 2, tx, scale, scale, 0);
         }
 
@@ -197,10 +199,13 @@ if (room == rCollection && selectedCard != noone && instance_exists(selectedCard
             var rw = (star_x2 - star_x1) * s - pad * 2;
             var rh = (star_y2 - star_y1) * s - pad * 2;
             var scale = fit_line(tx, 20, rw, rh);
+            scale = round(scale * 20) / 20;
             var left = tlx + star_x1 * s + pad;
             var top  = tly + star_y1 * s + pad;
             var wsc  = string_width(tx) * scale;
             var cx   = left + max(0, (rw - wsc) * 0.5);
+            cx = round(cx);
+            top = round(top);
             draw_text_transformed(cx, top + 2, tx, scale, scale, 0);
         }
 
@@ -211,7 +216,12 @@ if (room == rCollection && selectedCard != noone && instance_exists(selectedCard
             var rw = (genre_x2 - genre_x1) * s - pad * 2 - mar * 2;
             var rh = (genre_y2 - genre_y1) * s - pad * 2;
             var scale = fit_line(tx, 16, rw, rh);
-            draw_text_transformed(tlx + genre_x1 * s + pad + mar, tly + genre_y1 * s + pad + 2, tx, scale, scale, 0);
+            scale = round(scale * 20) / 20;
+            var gx = tlx + genre_x1 * s + pad + mar;
+            var gy = tly + genre_y1 * s + pad;
+            gx = round(gx);
+            gy = round(gy);
+            draw_text_transformed(gx, gy + 2, tx, scale, scale, 0);
         }
 
         // --- ARCHETYPE ---
@@ -221,74 +231,41 @@ if (room == rCollection && selectedCard != noone && instance_exists(selectedCard
             var rw = (arch_x2 - arch_x1) * s - pad * 2 - mar * 2;
             var rh = (arch_y2 - arch_y1) * s - pad * 2;
             var scale = fit_line(tx, 16, rw, rh);
-            draw_text_transformed(tlx + arch_x1 * s + pad + mar, tly + arch_y1 * s + pad + 2, tx, scale, scale, 0);
+            scale = round(scale * 20) / 20;
+            var ax = tlx + arch_x1 * s + pad + mar;
+            var ay = tly + arch_y1 * s + pad;
+            ax = round(ax);
+            ay = round(ay);
+            draw_text_transformed(ax, ay + 2, tx, scale, scale, 0);
         }
 
-        // --- DESCRIPTION (justifiée) ---
+        // --- DESCRIPTION (wrap natif) ---
         if (variable_instance_exists(selectedCard, "description")) {
+            draw_set_halign(fa_left);
+            draw_set_valign(fa_top);
             var tx = string(selectedCard.description);
             var mar = 7;
             var rw = (desc_x2 - desc_x1) * s - pad * 2 - mar * 2;
             var rh = (desc_y2 - desc_y1) * s - pad * 2;
-            // Calcul d'échelle pour remplir la hauteur (cap 24px pour plus de lisibilité)
-            var scale = fit_block(tx, 24, rw, rh);
             var left = tlx + desc_x1 * s + pad + mar;
             var top  = tly + desc_y1 * s + pad;
             var base_h = string_height("Ag");
-            var line_h = base_h * scale;
-            var space_w = string_width(" ") * scale;
-            var dy = top + 2;
-
-            var paragraphs = string_split(tx, "\n");
-            for (var p = 0; p < array_length(paragraphs); p++) {
-                var words = string_split(paragraphs[p], " ");
-                var i = 0;
-                while (i < array_length(words)) {
-                    var line_words = [];
-                    var count = 0;
-                    var line_w = 0;
-                    // Compose la ligne
-                    while (i < array_length(words)) {
-                        var w = words[i];
-                        var ww = string_width(w) * scale;
-                        var plus_space = (count > 0) ? space_w : 0;
-                        if (line_w + plus_space + ww <= rw) {
-                            line_words[count] = w;
-                            count += 1;
-                            line_w += plus_space + ww;
-                            i += 1;
-                        } else {
-                            break;
-                        }
-                    }
-
-                    // Justifie toutes les lignes sauf la dernière du paragraphe
-                    // Justification contrôlée: limiter l'espace ajouté pour éviter les trous
-                    var gaps = max(0, count - 1);
-                    var extra_gap = 0;
-                    if (gaps > 0 && i < array_length(words)) {
-                        var extra = rw - line_w;
-                        var extra_raw = (extra > 0) ? (extra / gaps) : 0;
-                        var max_extra_ratio = 0.5; // au plus +50% de l'espace normal
-                        extra_gap = min(extra_raw, string_width(" ") * scale * max_extra_ratio);
-                    }
-
-                    var dx = left;
-                    for (var j = 0; j < count; j++) {
-                        var wj = line_words[j];
-                        draw_text_transformed(dx, dy, wj, scale, scale, 0);
-                        var wjw = string_width(wj) * scale;
-                        if (j < count - 1) {
-                            dx += wjw + space_w + extra_gap;
-                        } else {
-                            dx += wjw;
-                        }
-                    }
-
-                    dy += line_h;
-                    if (dy + line_h > top + rh) break;
-                }
+            var sc0 = (base_h > 0) ? 20 / base_h : 1;
+            var sc = sc0;
+            for (var ii = 0; ii < 8; ii++) {
+                var w_pre = (sc > 0) ? (rw / sc) : rw;
+                var h_un = string_height_ext(tx, base_h, w_pre);
+                var h_sc = h_un * sc;
+                if (h_sc <= rh) break;
+                var k = rh / max(1, h_sc);
+                sc *= max(0.6, min(0.95, k));
+                sc = min(sc, sc0);
             }
+            sc = round(sc * 20) / 20;
+            left = round(left);
+            top  = round(top);
+            var w_eff = round(rw / sc);
+            draw_text_ext_transformed(left, top + 2, tx, base_h, w_eff, sc, sc, 0);
         }
 
         // --- ATK ---
@@ -296,15 +273,19 @@ if (room == rCollection && selectedCard != noone && instance_exists(selectedCard
             var tx = string(selectedCard.attack);
             var rw = (atk_x2 - atk_x1) * s - pad * 2;
             var rh = (atk_y2 - atk_y1) * s - pad * 2;
-            // Taille fixe: 12 px de hauteur de ligne, centrage H/V
             var base_line_h = string_height("Ag");
             var scale = (base_line_h > 0) ? 12 / base_line_h : 1;
+            scale = round(scale * 20) / 20;
             var left = tlx + atk_x1 * s + pad;
             var top  = tly + atk_y1 * s + pad - 2;
             var wsc  = string_width(tx) * scale;
             var hsc  = base_line_h * scale;
             var cx   = left + max(0, (rw - wsc) * 0.5);
             var cy   = top  + max(0, (rh - hsc) * 0.5);
+            left = round(left);
+            top  = round(top);
+            cx   = round(cx);
+            cy   = round(cy);
             draw_text_transformed(cx, cy, tx, scale, scale, 0);
         }
 
@@ -313,15 +294,19 @@ if (room == rCollection && selectedCard != noone && instance_exists(selectedCard
             var tx = string(selectedCard.defense);
             var rw = (def_x2 - def_x1) * s - pad * 2;
             var rh = (def_y2 - def_y1) * s - pad * 2;
-            // Taille fixe: 12 px de hauteur de ligne, centrage H/V
             var base_line_h = string_height("Ag");
             var scale = (base_line_h > 0) ? 12 / base_line_h : 1;
+            scale = round(scale * 20) / 20;
             var left = tlx + def_x1 * s + pad;
             var top  = tly + def_y1 * s + pad - 2;
             var wsc  = string_width(tx) * scale;
             var hsc  = base_line_h * scale;
             var cx   = left + max(0, (rw - wsc) * 0.5);
             var cy   = top  + max(0, (rh - hsc) * 0.5);
+            left = round(left);
+            top  = round(top);
+            cx   = round(cx);
+            cy   = round(cy);
             draw_text_transformed(cx, cy, tx, scale, scale, 0);
         }
     }
