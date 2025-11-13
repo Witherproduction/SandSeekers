@@ -11,4 +11,16 @@ booster = "Usine robotique"
 rarity = "commun"
 lastTurnAttack = 0;
 is_player_card = true; // Définit explicitement cette carte comme appartenant au joueur
-description = "Appel : Augmente de 500 l'ATK et la DEF d'un robot allié."
+description = "Appel : Augmente de 500 l'ATK et la DEF d'un Méca allié."
+
+if (!variable_instance_exists(id, "effects")) effects = [];
+array_push(effects, {
+    id: "chien_soutien_buff_meca_on_summon",
+    trigger: TRIGGER_ON_SUMMON,
+    effect_type: EFFECT_BUFF,
+    scope: "single",
+    owner: "ally",
+    criteria: { type: "Monster", genre: "Méca" },
+    atk: 500,
+    def: 500
+});

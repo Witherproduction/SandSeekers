@@ -69,7 +69,9 @@ var avail = max(0, total - scrollIndex);
 var count = min(avail, visible_cards);
 
 for (var i = 0; i < count; i++) {
-    var cardData = list[total - 1 - (i + scrollIndex)]; // On parcourt depuis la dernière carte ajoutée
+    var index = total - 1 - (i + scrollIndex);
+    index = clamp(index, 0, total - 1);
+    var cardData = list[index];
     
     // Vérifier que les données de carte existent
     if (cardData != undefined) {

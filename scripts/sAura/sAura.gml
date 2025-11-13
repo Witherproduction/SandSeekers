@@ -40,6 +40,7 @@ function applyArchetypeAuraBuff(card, effect) {
 function cleanupAuraSource(card, effect) {
     if (card == noone || !instance_exists(card)) return false;
     var srcKey = "aura:" + string(card.id);
+    var buffPrefix = "effect:" + string(EFFECT_BUFF) + ":" + string(card.id) + ":";
     var cname = variable_instance_exists(card, "name") ? card.name : string(card.id);
     show_debug_message("### cleanupAuraSource: removing contributions from source " + cname + " (" + srcKey + ")");
     with (oCardParent) {
@@ -52,6 +53,20 @@ function cleanupAuraSource(card, effect) {
             }
             if (isMonster2) {
                 buffRemoveContribution(id, srcKey);
+                if (variable_instance_exists(self, "buff_contribs")) {
+                    var filtered = [];
+                    for (var i = 0; i < array_length(self.buff_contribs); i++) {
+                        var c = self.buff_contribs[i];
+                        if (is_struct(c) && variable_struct_exists(c, "key")) {
+                            var k = string(c.key);
+                            if (string_pos(buffPrefix, k) == 1) {
+                                continue;
+                            }
+                        }
+                        array_push(filtered, c);
+                    }
+                    self.buff_contribs = filtered;
+                }
                 buffRecompute(id);
             }
         }

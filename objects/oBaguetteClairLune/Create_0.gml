@@ -12,5 +12,5 @@ description = "Ne peut être équipé uniquement sur un Humanoïde ou une Bête.
 
 effects = [];
 array_push(effects, { trigger: TRIGGER_MAIN_PHASE, effect_type: EFFECT_EQUIP_SELECT_TARGET, allowed_genres: ["Humanoïde", "Bête"], ally_only: false, description: "Choisissez un Humanoïde ou une Bête à équiper; posez cette carte." });
-array_push(effects, { trigger: TRIGGER_CONTINUOUS, effect_type: EFFECT_EQUIP_APPLY_BUFF, atk_buff: 500, def_buff: 500, description: "Le monstre équipé gagne +500 ATK et +500 DEF." });
+array_push(effects, { trigger: TRIGGER_CONTINUOUS, effect_type: EFFECT_BUFF, scope: "equip", aggregate: true, atk: 500, def: 500, description: "Le monstre équipé gagne +500 ATK et +500 DEF." });
 array_push(effects, { trigger: TRIGGER_ON_DESTROY, effect_type: EFFECT_EQUIP_CLEANUP, description: "Réinitialise le monstre équipé et détache la cible." });

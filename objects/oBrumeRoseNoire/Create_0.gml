@@ -15,8 +15,10 @@ description = "Les monstres Rose noire gagne 500/500. Tombe : Envoie 2 cartes Ro
 // Effet continu: aura +500/+500 pour tous les monstres "Rose noire" sur le terrain
 effects[0] = {
     trigger: TRIGGER_CONTINUOUS,
-    effect_type: EFFECT_AURA_ARCHETYPE_BUFF,
-    archetype: "Rose noire",
+    effect_type: EFFECT_BUFF,
+    scope: "aura",
+    aggregate: true,
+    criteria: { archetype: "Rose noire", type: "Monster" },
     atk: 500,
     def: 500
 };

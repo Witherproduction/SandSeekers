@@ -145,19 +145,22 @@ function destroyCard(card, source = noone) {
             if (fm != noone && variable_instance_exists(card, "fieldPosition")) { fm.remove(card); }
         }
         card.zone = "Graveyard";
-        var fx = instance_create_layer(card.x, card.y, "Instances", FX_Destruction);
-        if (fx != noone) {
-            fx.spriteGhost   = card.sprite_index;
-            fx.imageGhost    = card.image_index;
-            fx.image_xscale  = card.image_xscale;
-            fx.image_yscale  = card.image_yscale;
-            fx.image_angle   = card.image_angle;
-            fx.duration_ms   = 700;
-            fx.sep_px        = 48;
-            fx.strip_h       = 3;
-            fx.ragged_amp_px = 6;
-            if (variable_instance_exists(self, "target") && instance_exists(target) && variable_instance_exists(target, "depth")) { fx.depth_override = target.depth + 1; }
-            else { fx.depth_override = 100000; }
+        var skip_fx = (variable_instance_exists(card, "_skip_destruction_fx") && card._skip_destruction_fx);
+        if (!skip_fx) {
+            var fx = instance_create_layer(card.x, card.y, "Instances", FX_Destruction);
+            if (fx != noone) {
+                fx.spriteGhost   = card.sprite_index;
+                fx.imageGhost    = card.image_index;
+                fx.image_xscale  = card.image_xscale;
+                fx.image_yscale  = card.image_yscale;
+                fx.image_angle   = card.image_angle;
+                fx.duration_ms   = 700;
+                fx.sep_px        = 48;
+                fx.strip_h       = 3;
+                fx.ragged_amp_px = 6;
+                if (variable_instance_exists(self, "target") && instance_exists(target) && variable_instance_exists(target, "depth")) { fx.depth_override = target.depth + 1; }
+                else { fx.depth_override = 100000; }
+            }
         }
         // Détruire immédiatement l'instance sauf si une tempo est en attente sur cette carte
         if (instance_exists(card)) {
@@ -169,7 +172,10 @@ function destroyCard(card, source = noone) {
                 card.sprite_index = sprInvisible;
                 card._wait_destroy_on_tempo = true;
             } else {
-                instance_destroy(card);
+                var delay_destroy = (variable_instance_exists(card, "_delay_instance_destroy_for_poison") && card._delay_instance_destroy_for_poison);
+                if (!delay_destroy) {
+                    instance_destroy(card);
+                }
             }
         }
     }
@@ -190,6 +196,10 @@ function spawnPoisonFX(target, source) {
         if (variable_instance_exists(target, "image_yscale")) fx.image_yscale = target.image_yscale;
         if (!variable_instance_exists(fx, "duration_steps")) fx.duration_steps = max(1, floor(room_speed * 0.6));
         if (!variable_instance_exists(fx, "color")) fx.color = make_color_rgb(60, 200, 80);
+        if (instance_exists(target)) {
+            target._skip_destruction_fx = true;
+            target._delay_instance_destroy_for_poison = true;
+        }
     }
 }
 

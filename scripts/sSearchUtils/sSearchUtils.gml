@@ -184,6 +184,23 @@ function _transferSelectedCards(ownerIsHero, selectedData, destination, shuffleA
         switch (string_lower(destination)) {
             case "hand":
                 if (instance_exists(handInst)) {
+                    if (is_struct(card) && source == "Graveyard" && variable_struct_exists(card, "object_index")) {
+                        var objIndex = card.object_index;
+                        var newInst = instance_create_layer(handInst.x, handInst.y, layer_get_id("Instances"), objIndex);
+                        if (newInst != noone) {
+                            if (variable_struct_exists(card, "name")) newInst.name = card.name;
+                            if (variable_struct_exists(card, "cardType")) newInst.type = card.cardType;
+                            if (variable_struct_exists(card, "archetype")) newInst.archetype = card.archetype;
+                            if (variable_struct_exists(card, "genre")) newInst.genre = card.genre;
+                            if (variable_struct_exists(card, "attack")) newInst.attack = card.attack;
+                            if (variable_struct_exists(card, "defense")) newInst.defense = card.defense;
+                            if (variable_struct_exists(card, "star")) newInst.star = card.star;
+                            if (variable_struct_exists(card, "description")) newInst.description = card.description;
+                            newInst.isHeroOwner = ownerIsHero;
+                            newInst.image_angle = ownerIsHero ? 0 : 180;
+                            card = newInst;
+                        }
+                    }
                     handInst.addCard(card);
                     var ctx = { owner_is_hero: ownerIsHero };
                     if (source == "Deck") ctx.from_deck = deckInst;
@@ -197,6 +214,23 @@ function _transferSelectedCards(ownerIsHero, selectedData, destination, shuffleA
                 
             case "deck":
                 if (instance_exists(deckInst)) {
+                    if (is_struct(card) && source == "Graveyard" && variable_struct_exists(card, "object_index")) {
+                        var objIndex2 = card.object_index;
+                        var newInst2 = instance_create_layer(deckInst.x, deckInst.y, layer_get_id("Instances"), objIndex2);
+                        if (newInst2 != noone) {
+                            if (variable_struct_exists(card, "name")) newInst2.name = card.name;
+                            if (variable_struct_exists(card, "cardType")) newInst2.type = card.cardType;
+                            if (variable_struct_exists(card, "archetype")) newInst2.archetype = card.archetype;
+                            if (variable_struct_exists(card, "genre")) newInst2.genre = card.genre;
+                            if (variable_struct_exists(card, "attack")) newInst2.attack = card.attack;
+                            if (variable_struct_exists(card, "defense")) newInst2.defense = card.defense;
+                            if (variable_struct_exists(card, "star")) newInst2.star = card.star;
+                            if (variable_struct_exists(card, "description")) newInst2.description = card.description;
+                            newInst2.isHeroOwner = ownerIsHero;
+                            newInst2.image_angle = ownerIsHero ? 0 : 180;
+                            card = newInst2;
+                        }
+                    }
                     ds_list_add(deckInst.cards, card);
                     if (variable_instance_exists(card, "zone")) card.zone = "Deck";
                 }

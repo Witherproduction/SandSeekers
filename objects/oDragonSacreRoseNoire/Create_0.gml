@@ -26,8 +26,10 @@ effects = [
     {
         id: 1,
         trigger: TRIGGER_CONTINUOUS,
-        effect_type: EFFECT_BOOST_ATK_PER_GRAVEYARD_ARCHETYPE,
+        effect_type: EFFECT_BUFF,
+        scope: "graveyard",
         archetype: "Rose noire",
-        boost_per_card: 500,        
+        boost_per_card: 500,
+        aggregate: true,
     }
 ];

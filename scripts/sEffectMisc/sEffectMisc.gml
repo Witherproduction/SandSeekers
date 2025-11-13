@@ -88,7 +88,8 @@ function hasValidTargetForEffect(card, effect) {
                        || etype == EFFECT_DESTROY_TARGET
                        || etype == EFFECT_BANISH_TARGET
                        || etype == EFFECT_RETURN_TO_HAND
-                       || etype == EFFECT_EQUIP_SELECT_TARGET);
+                       || etype == EFFECT_EQUIP_SELECT_TARGET
+                       || etype == EFFECT_BUFF);
 
     // Cas non-ciblé: certains effets ont tout de même des prérequis bloquants
     if (!needsTarget) {

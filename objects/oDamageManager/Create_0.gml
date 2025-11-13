@@ -119,9 +119,49 @@ resolveAttackMonster = function(cardHero, cardEnemy) {
     
     // Combat selon l'orientation de l'ennemi
     if (cardEnemy.orientation == "Attack") {
-        resolveAttackVsAttack(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy_Instance);
+        var effHeroAtk = variable_struct_exists(cardHero, "effective_attack") ? cardHero.effective_attack : cardHero.attack;
+        var effEnemyAtk = variable_struct_exists(cardEnemy, "effective_attack") ? cardEnemy.effective_attack : cardEnemy.attack;
+        var isPois = (variable_struct_exists(cardHero, "isPoisoner") && cardHero.isPoisoner);
+        if (isPois) {
+            if (effHeroAtk > effEnemyAtk) {
+                var damage = effHeroAtk - effEnemyAtk;
+                LP_Enemy_Instance.nbLP -= damage;
+                spawnPoisonFX(cardEnemy, cardHero);
+                destroyCard(cardEnemy, cardHero);
+            } else if (effHeroAtk == effEnemyAtk) {
+                spawnPoisonFX(cardEnemy, cardHero);
+                destroyCard(cardHero, cardEnemy);
+                destroyCard(cardEnemy, cardHero);
+            } else {
+                var damage2 = effEnemyAtk - effHeroAtk;
+                LP_Hero_Instance.nbLP -= damage2;
+                spawnPoisonFX(cardEnemy, cardHero);
+                destroyCard(cardHero, cardEnemy);
+                destroyCard(cardEnemy, cardHero);
+            }
+        } else {
+            resolveAttackVsAttack(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy_Instance);
+        }
     } else if (cardEnemy.orientation == "Defense" || cardEnemy.orientation == "DefenseVisible") {
-        resolveAttackVsDefense(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy_Instance);
+        var effHeroAtk2 = variable_struct_exists(cardHero, "effective_attack") ? cardHero.effective_attack : cardHero.attack;
+        var effEnemyDef = variable_struct_exists(cardEnemy, "effective_defense") ? cardEnemy.effective_defense : cardEnemy.defense;
+        var isPois2 = (variable_struct_exists(cardHero, "isPoisoner") && cardHero.isPoisoner);
+        if (isPois2) {
+            if (effHeroAtk2 > effEnemyDef) {
+                spawnPoisonFX(cardEnemy, cardHero);
+                destroyCard(cardEnemy, cardHero);
+            } else if (effHeroAtk2 == effEnemyDef) {
+                spawnPoisonFX(cardEnemy, cardHero);
+                destroyCard(cardEnemy, cardHero);
+            } else {
+                var damage3 = effEnemyDef - effHeroAtk2;
+                LP_Hero_Instance.nbLP -= damage3;
+                spawnPoisonFX(cardEnemy, cardHero);
+                destroyCard(cardEnemy, cardHero);
+            }
+        } else {
+            resolveAttackVsDefense(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy_Instance);
+        }
     }
     
     // Marquer l'attaque comme utilisée
@@ -149,11 +189,10 @@ resolveAttackVsAttack = function(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy
         
         LP_Enemy_Instance.nbLP -= damage;
         
-        destroyCard(cardEnemy, cardHero);
-        // Optionnel: FX poison si empoisonneur (cohérence visuelle)
         if (variable_struct_exists(cardHero, "isPoisoner") && cardHero.isPoisoner) {
             spawnPoisonFX(cardEnemy, cardHero);
         }
+        destroyCard(cardEnemy, cardHero);
         
     } else if (effHeroAtk == effEnemyAtk) {
         // Égalité
@@ -161,8 +200,8 @@ resolveAttackVsAttack = function(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy
         if (isPoisoner) {
             // Empoisonneur: défenseur détruit par poison, attaquant survit
             
-            destroyCard(cardEnemy, cardHero);
             spawnPoisonFX(cardEnemy, cardHero);
+            destroyCard(cardEnemy, cardHero);
         } else {
             // Cas normal: destruction mutuelle
             
@@ -177,11 +216,9 @@ resolveAttackVsAttack = function(cardHero, cardEnemy, LP_Hero_Instance, LP_Enemy
         LP_Hero_Instance.nbLP -= damage;
         
         destroyCard(cardHero, cardEnemy);
-        // Empoisonneur: malgré la défaite, le défenseur est détruit par poison
         if (variable_struct_exists(cardHero, "isPoisoner") && cardHero.isPoisoner) {
-            
-            destroyCard(cardEnemy, cardHero);
             spawnPoisonFX(cardEnemy, cardHero);
+            destroyCard(cardEnemy, cardHero);
         }
     }
 
@@ -214,9 +251,8 @@ resolveAttackVsDefense = function(cardHero, cardEnemy, LP_Hero_Instance, LP_Enem
         // Égalité - Pas de destruction (sauf poison)
         
         if (variable_struct_exists(cardHero, "isPoisoner") && cardHero.isPoisoner) {
-            
-            destroyCard(cardEnemy, cardHero);
             spawnPoisonFX(cardEnemy, cardHero);
+            destroyCard(cardEnemy, cardHero);
         }
         
     } else {
@@ -228,9 +264,8 @@ resolveAttackVsDefense = function(cardHero, cardEnemy, LP_Hero_Instance, LP_Enem
         
         // Poison si applicable
         if (variable_struct_exists(cardHero, "isPoisoner") && cardHero.isPoisoner) {
-            
-            destroyCard(cardEnemy, cardHero);
             spawnPoisonFX(cardEnemy, cardHero);
+            destroyCard(cardEnemy, cardHero);
         }
     }
 
@@ -333,36 +368,71 @@ resolveAttackMonsterEnemy = function(attacker, defender) {
     if (defender.orientation == "Attack") {
         var effEnemyAtk = variable_struct_exists(attacker, "effective_attack") ? attacker.effective_attack : attacker.attack;
         var effHeroAtk  = variable_struct_exists(defender, "effective_attack") ? defender.effective_attack : defender.attack;
-        
-        if (effEnemyAtk > effHeroAtk) {
-            var damage = effEnemyAtk - effHeroAtk;
-            LP_Hero_Instance.nbLP -= damage;
-            destroyCard(defender, attacker);
-        } else if (effEnemyAtk == effHeroAtk) {
-            destroyCard(attacker, defender);
-            destroyCard(defender, attacker);
-        } else {
-            var damage = effHeroAtk - effEnemyAtk;
-            LP_Enemy_Instance.nbLP -= damage;
-            destroyCard(attacker, defender);
-        }
-    } else if (defender.orientation == "Defense" || defender.orientation == "DefenseVisible") {
-        var effEnemyAtk = variable_struct_exists(attacker, "effective_attack") ? attacker.effective_attack : attacker.attack;
-        var effHeroDef  = variable_struct_exists(defender, "effective_defense") ? defender.effective_defense : defender.defense;
-        
-        if (effEnemyAtk > effHeroDef) {
-            destroyCard(defender, attacker);
-        } else if (effEnemyAtk == effHeroDef) {
-            if (variable_struct_exists(attacker, "isPoisoner") && attacker.isPoisoner) {
-                destroyCard(defender, attacker);
+        var isPoisE = (variable_struct_exists(attacker, "isPoisoner") && attacker.isPoisoner);
+        if (isPoisE) {
+            if (effEnemyAtk > effHeroAtk) {
+                var damage = effEnemyAtk - effHeroAtk;
+                LP_Hero_Instance.nbLP -= damage;
                 spawnPoisonFX(defender, attacker);
+                destroyCard(defender, attacker);
+            } else if (effEnemyAtk == effHeroAtk) {
+                spawnPoisonFX(defender, attacker);
+                destroyCard(attacker, defender);
+                destroyCard(defender, attacker);
+            } else {
+                var damage2 = effHeroAtk - effEnemyAtk;
+                LP_Enemy_Instance.nbLP -= damage2;
+                spawnPoisonFX(defender, attacker);
+                destroyCard(attacker, defender);
+                destroyCard(defender, attacker);
             }
         } else {
-            var damage = effHeroDef - effEnemyAtk;
-            LP_Enemy_Instance.nbLP -= damage; // dégâts de contre pour l’ennemi
-            if (variable_struct_exists(attacker, "isPoisoner") && attacker.isPoisoner) {
+            if (effEnemyAtk > effHeroAtk) {
+                var damage = effEnemyAtk - effHeroAtk;
+                LP_Hero_Instance.nbLP -= damage;
                 destroyCard(defender, attacker);
+            } else if (effEnemyAtk == effHeroAtk) {
+                destroyCard(attacker, defender);
+                destroyCard(defender, attacker);
+            } else {
+                var damage = effHeroAtk - effEnemyAtk;
+                LP_Enemy_Instance.nbLP -= damage;
+                destroyCard(attacker, defender);
+            }
+        }
+    } else if (defender.orientation == "Defense" || defender.orientation == "DefenseVisible") {
+        var effEnemyAtk2 = variable_struct_exists(attacker, "effective_attack") ? attacker.effective_attack : attacker.attack;
+        var effHeroDef  = variable_struct_exists(defender, "effective_defense") ? defender.effective_defense : defender.defense;
+        var isPoisE2 = (variable_struct_exists(attacker, "isPoisoner") && attacker.isPoisoner);
+        if (isPoisE2) {
+            if (effEnemyAtk2 > effHeroDef) {
                 spawnPoisonFX(defender, attacker);
+                destroyCard(defender, attacker);
+            } else if (effEnemyAtk2 == effHeroDef) {
+                spawnPoisonFX(defender, attacker);
+                destroyCard(defender, attacker);
+            } else {
+                var damage3 = effHeroDef - effEnemyAtk2;
+                LP_Enemy_Instance.nbLP -= damage3;
+                spawnPoisonFX(defender, attacker);
+                destroyCard(defender, attacker);
+            }
+        } else {
+            var effEnemyAtk = effEnemyAtk2;
+            if (effEnemyAtk > effHeroDef) {
+                destroyCard(defender, attacker);
+            } else if (effEnemyAtk == effHeroDef) {
+                if (variable_struct_exists(attacker, "isPoisoner") && attacker.isPoisoner) {
+                    spawnPoisonFX(defender, attacker);
+                    destroyCard(defender, attacker);
+                }
+            } else {
+                var damage = effHeroDef - effEnemyAtk;
+                LP_Enemy_Instance.nbLP -= damage;
+                if (variable_struct_exists(attacker, "isPoisoner") && attacker.isPoisoner) {
+                    spawnPoisonFX(defender, attacker);
+                    destroyCard(defender, attacker);
+                }
             }
         }
     }

@@ -22,6 +22,8 @@
 #macro EFFECT_LOSE_DEFENSE "lose_defense"               // Perdre de la DEF
 #macro EFFECT_SET_ATTACK "set_attack"                   // Définir l'ATK
 #macro EFFECT_SET_DEFENSE "set_defense"                 // Définir la DEF
+#macro EFFECT_BUFF "buff"
+#macro EFFECT_BUFF_TARGET_BY_CRITERIA "buff_target_by_criteria"   // Buff une cible selon critères
 
 // Effets de ciblage
 #macro EFFECT_DAMAGE_TARGET "damage_target"             // Infliger des dégâts à une cible
@@ -170,12 +172,15 @@ function executeEffect(card, effect, context = {}) {
                        || effectType == EFFECT_DESTROY_TARGET
                        || effectType == EFFECT_BANISH_TARGET
                        || effectType == EFFECT_RETURN_TO_HAND
-                       || effectType == EFFECT_EQUIP_SELECT_TARGET);
+                       || effectType == EFFECT_EQUIP_SELECT_TARGET
+                       || effectType == EFFECT_GAIN_ATTACK
+                       || effectType == EFFECT_BUFF);
     if (needsTarget && target == noone) {
         // Activation manuelle uniquement (phase principale ou effet rapide) et uniquement côté Héros (jamais IA)
         var isManualActivation = (!variable_struct_exists(effect, "trigger")
                                   || effect.trigger == TRIGGER_MAIN_PHASE
-                                  || effect.trigger == TRIGGER_QUICK_EFFECT);
+                                  || effect.trigger == TRIGGER_QUICK_EFFECT
+                                  || effect.trigger == TRIGGER_ON_SUMMON);
         var ownerIsHero_ctx = (variable_struct_exists(context, "owner_is_hero")) ? context.owner_is_hero
                               : ((card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true);
         if (isManualActivation && ownerIsHero_ctx && instance_exists(selectManager)) {
@@ -404,7 +409,40 @@ function executeEffect(card, effect, context = {}) {
             
         // Effets de combat
         case EFFECT_GAIN_ATTACK:
-            return modifyAttack(card, value, true);
+        {
+            var t = (target != noone) ? target : card;
+            if (t == noone) return false;
+            // Validation par critères si fournis
+            var ok = true;
+            if (variable_struct_exists(effect, "criteria")) {
+                var crit = effect.criteria;
+                if (variable_struct_exists(crit, "type")) {
+                    var wantType = string_lower(crit.type);
+                    var isMon = object_is_ancestor(t.object_index, oCardMonster) || (variable_instance_exists(t, "type") && string_lower(t.type) == "monster");
+                    if (wantType == "monster" && !isMon) ok = false;
+                }
+                if (variable_struct_exists(crit, "genre")) {
+                    var wantGenre = string_lower(string(crit.genre));
+                    var tg = variable_instance_exists(t, "genre") ? string_lower(string(t.genre)) : "";
+                    if (wantGenre != "" && tg != wantGenre) ok = false;
+                }
+            }
+            // Restriction d'allégeance si owner spécifié
+            if (variable_struct_exists(effect, "owner")) {
+                var ownerSide = string_lower(effect.owner);
+                var srcHero = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
+                var tgtHero = (instance_exists(t) && variable_instance_exists(t, "isHeroOwner")) ? t.isHeroOwner : srcHero;
+                if (ownerSide == "ally" && (tgtHero != srcHero)) ok = false;
+                if (ownerSide == "enemy" && (tgtHero == srcHero)) ok = false;
+            }
+            if (!ok) return false;
+            // Appliquer ATK, et DEF si demandé dans l'effet
+            modifyAttack(t, value, false);
+            if (variable_struct_exists(effect, "def")) {
+                modifyDefense(t, effect.def, false);
+            }
+            return true;
+        }
             
         case EFFECT_LOSE_ATTACK:
             return modifyAttack(card, -value, true);
@@ -418,16 +456,256 @@ function executeEffect(card, effect, context = {}) {
         }
             
         case EFFECT_GAIN_DEFENSE:
-            return modifyDefense(card, value, true);
+        {
+            var t2 = (target != noone) ? target : card;
+            if (t2 == noone) return false;
+            // Critères éventuels identiques à ATK
+            var ok2 = true;
+            if (variable_struct_exists(effect, "criteria")) {
+                var crit2 = effect.criteria;
+                if (variable_struct_exists(crit2, "type")) {
+                    var wantType2 = string_lower(crit2.type);
+                    var isMon2 = object_is_ancestor(t2.object_index, oCardMonster) || (variable_instance_exists(t2, "type") && string_lower(t2.type) == "monster");
+                    if (wantType2 == "monster" && !isMon2) ok2 = false;
+                }
+                if (variable_struct_exists(crit2, "genre")) {
+                    var wantGenre2 = string_lower(string(crit2.genre));
+                    var tg2 = variable_instance_exists(t2, "genre") ? string_lower(string(t2.genre)) : "";
+                    if (wantGenre2 != "" && tg2 != wantGenre2) ok2 = false;
+                }
+            }
+            if (variable_struct_exists(effect, "owner")) {
+                var ownerSide2 = string_lower(effect.owner);
+                var srcHero2 = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
+                var tgtHero2 = (instance_exists(t2) && variable_instance_exists(t2, "isHeroOwner")) ? t2.isHeroOwner : srcHero2;
+                if (ownerSide2 == "ally" && (tgtHero2 != srcHero2)) ok2 = false;
+                if (ownerSide2 == "enemy" && (tgtHero2 == srcHero2)) ok2 = false;
+            }
+            if (!ok2) return false;
+            modifyDefense(t2, value, false);
+            return true;
+        }
+
+        case EFFECT_BUFF_TARGET_BY_CRITERIA:
+        {
+            var ownerSide = "ally";
+            if (variable_struct_exists(effect, "owner")) ownerSide = string_lower(effect.owner);
+            var ownerIsHeroFlag = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
+            var pickHeroField = (ownerSide == "ally") ? ownerIsHeroFlag : !ownerIsHeroFlag;
+            var fieldArr = pickHeroField ? fieldMonsterHero.cards : fieldMonsterEnemy.cards;
+
+            var crit = variable_struct_exists(effect, "criteria") ? effect.criteria : {};
+            var wantGenre = variable_struct_exists(crit, "genre") ? string(crit.genre) : "";
+            var wantType  = variable_struct_exists(crit, "type") ? string_lower(crit.type) : "monster";
+
+            var candidates = [];
+            for (var i = 0; i < array_length(fieldArr); i++) {
+                var c = fieldArr[i];
+                if (c == 0 || c == noone || !instance_exists(c)) continue;
+                if (!variable_instance_exists(c, "zone") || !(c.zone == "Field" || c.zone == "FieldSelected")) continue;
+                if (c == card) continue;
+                var isMon = object_is_ancestor(c.object_index, oCardMonster) || (variable_instance_exists(c, "type") && string_lower(c.type) == "monster");
+                if (!isMon) continue;
+                var ok = true;
+                if (wantType != "" && wantType != "monster") { ok = ok && (string_lower(c.type) == wantType); }
+                if (wantGenre != "") {
+                    var cg = variable_instance_exists(c, "genre") ? string(c.genre) : "";
+                    ok = ok && (string_lower(cg) == string_lower(wantGenre));
+                }
+                if (ok) array_push(candidates, c);
+            }
+
+            if (array_length(candidates) <= 0) return false;
+            var target2 = candidates[0];
+            var bestIdx = 0; var bestVal = -100000;
+            for (var j = 0; j < array_length(candidates); j++) {
+                var tc = candidates[j];
+                var eatk = variable_instance_exists(tc, "effective_attack") ? tc.effective_attack : (variable_instance_exists(tc, "attack") ? tc.attack : 0);
+                var edef = variable_instance_exists(tc, "effective_defense") ? tc.effective_defense : (variable_instance_exists(tc, "defense") ? tc.defense : 0);
+                var score = eatk + edef;
+                if (score > bestVal) { bestVal = score; bestIdx = j; }
+            }
+            target2 = candidates[bestIdx];
+
+            var addAtk = variable_struct_exists(effect, "atk") ? effect.atk : (variable_struct_exists(effect, "value") ? effect.value : 500);
+            var addDef = variable_struct_exists(effect, "def") ? effect.def : (variable_struct_exists(effect, "value") ? effect.value : 500);
+
+            modifyAttack(target2, addAtk, false);
+            modifyDefense(target2, addDef, false);
+            return true;
+        }
             
         case EFFECT_LOSE_DEFENSE:
             return modifyDefense(card, -value, true);
             
         case EFFECT_SET_ATTACK:
             return setAttack(card, value);
-            
+
         case EFFECT_SET_DEFENSE:
             return setDefense(card, value);
+
+        case EFFECT_BUFF:
+        {
+            var scope = variable_struct_exists(effect, "scope") ? string_lower(effect.scope) : "single";
+            var mode = variable_struct_exists(effect, "mode") ? string_lower(effect.mode) : "add";
+            var ownerSideB = variable_struct_exists(effect, "owner") ? string_lower(effect.owner) : "ally";
+            var srcHeroB = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
+            var agg = (effect.trigger == TRIGGER_CONTINUOUS) || (variable_struct_exists(effect, "aggregate") && effect.aggregate);
+            var atkVal = 0;
+            var defVal = 0;
+            if (variable_struct_exists(effect, "atk")) atkVal = effect.atk; else atkVal = value;
+            if (variable_struct_exists(effect, "def")) defVal = effect.def; else defVal = value;
+
+            var matchesCriteria = function(tgt) {
+                if (tgt == noone || !instance_exists(tgt)) return false;
+                var okc = true;
+                if (variable_struct_exists(effect, "criteria")) {
+                    var critB = effect.criteria;
+                    if (variable_struct_exists(critB, "type")) {
+                        var wt = string_lower(critB.type);
+                        var isMon = object_is_ancestor(tgt.object_index, oCardMonster) || (variable_instance_exists(tgt, "type") && string_lower(tgt.type) == "monster");
+                        if (wt == "monster" && !isMon) okc = false;
+                    }
+                    if (variable_struct_exists(critB, "genre")) {
+                        var wg = string_lower(string(critB.genre));
+                        var tg = variable_instance_exists(tgt, "genre") ? string_lower(string(tgt.genre)) : "";
+                        if (wg != "" && tg != wg) okc = false;
+                    }
+                    if (variable_struct_exists(critB, "archetype")) {
+                        var wa = string_lower(string(critB.archetype));
+                        var ta = variable_instance_exists(tgt, "archetype") ? string_lower(string(tgt.archetype)) : "";
+                        if (wa != "" && ta != wa) okc = false;
+                    }
+                }
+                if (variable_struct_exists(effect, "owner")) {
+                    var tgtHero = (instance_exists(tgt) && variable_instance_exists(tgt, "isHeroOwner")) ? tgt.isHeroOwner : srcHeroB;
+                    if (ownerSideB == "ally" && (tgtHero != srcHeroB)) okc = false;
+                    if (ownerSideB == "enemy" && (tgtHero == srcHeroB)) okc = false;
+                }
+                if (variable_struct_exists(effect, "target_zone")) {
+                    var tz = string_lower(effect.target_zone);
+                    var z = variable_instance_exists(tgt, "zone") ? string_lower(tgt.zone) : "";
+                    if (tz == "field" && z != "field" && z != "fieldselected") okc = false;
+                    if (tz == "hand" && z != "hand") okc = false;
+                }
+                return okc;
+            };
+
+        var applyTo = function(tgt2) {
+            if (tgt2 == noone || !instance_exists(tgt2)) return false;
+            if (!matchesCriteria(tgt2)) return false;
+            var laAtk = atkVal;
+            var laDef = defVal;
+            var gotBonus = false;
+            if (variable_struct_exists(effect, "bonus_if_names")) {
+                var namesB = effect.bonus_if_names;
+                var oname = object_get_name(tgt2.object_index);
+                if (is_array(namesB)) {
+                    for (var bi = 0; bi < array_length(namesB); bi++) { if (oname == namesB[bi]) { gotBonus = true; break; } }
+                } else if (is_string(namesB)) { gotBonus = (oname == namesB); }
+            }
+            if (!gotBonus && variable_struct_exists(effect, "bonus_if_archetype")) {
+                var wantedA = string_lower(string(effect.bonus_if_archetype));
+                var ta2 = variable_instance_exists(tgt2, "archetype") ? string_lower(string(tgt2.archetype)) : "";
+                if (wantedA != "" && ta2 == wantedA) gotBonus = true;
+            }
+            if (!gotBonus && variable_struct_exists(effect, "bonus_if_genre")) {
+                var wantedG = string_lower(string(effect.bonus_if_genre));
+                var tg2 = variable_instance_exists(tgt2, "genre") ? string_lower(string(tgt2.genre)) : "";
+                if (wantedG != "" && tg2 == wantedG) gotBonus = true;
+            }
+            if (gotBonus) {
+                var extraAdd = variable_struct_exists(effect, "extra_buff") ? effect.extra_buff : 0;
+                var extraAtk = variable_struct_exists(effect, "atk_bonus") ? effect.atk_bonus : extraAdd;
+                var extraDef = variable_struct_exists(effect, "def_bonus") ? effect.def_bonus : extraAdd;
+                laAtk += extraAtk;
+                laDef += extraDef;
+            }
+            if (mode == "set") {
+                if (variable_struct_exists(effect, "set_atk")) setAttack(tgt2, effect.set_atk);
+                if (variable_struct_exists(effect, "set_def")) setDefense(tgt2, effect.set_def);
+                return true;
+            }
+            if (agg) {
+                var srcKeyB = "effect:" + string(effect.effect_type) + ":" + string(card.id) + ":" + string(variable_struct_exists(effect, "id") ? effect.id : -1);
+                if (scope == "equip") { srcKeyB = "equip:" + string(card.id); }
+                else if (scope == "aura") { srcKeyB = "aura:" + string(card.id); }
+                buffSetContribution(tgt2, srcKeyB, laAtk, laDef);
+                buffRecompute(tgt2);
+                return true;
+            } else {
+                if (laAtk != 0) modifyAttack(tgt2, laAtk, false);
+                if (laDef != 0) modifyDefense(tgt2, laDef, false);
+                return true;
+            }
+        };
+
+            if (scope == "single") {
+                var tgt = (target != noone) ? target : card;
+                return applyTo(tgt);
+            } else if (scope == "equip") {
+                var tEquip = (variable_instance_exists(card, "equipped_target")) ? card.equipped_target : noone;
+                return applyTo(tEquip);
+            } else if (scope == "all" || scope == "aura") {
+                var applied = false;
+                with (oCardParent) {
+                    if (!instance_exists(self)) continue;
+                    if (scope == "all") {
+                        var okOwn = true;
+                        if (variable_struct_exists(effect, "owner")) {
+                            var isHeroLocal = variable_instance_exists(self, "isHeroOwner") ? isHeroOwner : undefined;
+                            if (ownerSideB == "ally" && isHeroLocal != srcHeroB) okOwn = false;
+                            if (ownerSideB == "enemy" && isHeroLocal == srcHeroB) okOwn = false;
+                        }
+                        if (!okOwn) continue;
+                    }
+                    if (applyTo(id)) applied = true;
+                }
+                return applied;
+            } else if (scope == "graveyard") {
+                var totalBoost = 0;
+                if (variable_struct_exists(effect, "archetype")) {
+                    var arch = effect.archetype;
+                    var per = variable_struct_exists(effect, "boost_per_card") ? effect.boost_per_card : 500;
+                    var cnt = 0;
+                    if (instance_exists(graveyardHero)) {
+                        var gyh = graveyardHero.cards;
+                        for (var i = 0; i < array_length(gyh); i++) { var cd = gyh[i]; if (is_struct(cd) && object_is_ancestor(cd.object_index, oCardMonster) && variable_struct_exists(cd, "archetype") && string_lower(cd.archetype) == string_lower(arch)) cnt++; }
+                    }
+                    if (instance_exists(graveyardEnemy)) {
+                        var gye = graveyardEnemy.cards;
+                        for (var j = 0; j < array_length(gye); j++) { var cd2 = gye[j]; if (is_struct(cd2) && object_is_ancestor(cd2.object_index, oCardMonster) && variable_struct_exists(cd2, "archetype") && string_lower(cd2.archetype) == string_lower(arch)) cnt++; }
+                    }
+                    totalBoost = cnt * per;
+                    atkVal = totalBoost;
+                } else if (variable_struct_exists(effect, "genre")) {
+                    var gen = effect.genre;
+                    var per2 = variable_struct_exists(effect, "boost_per_card") ? effect.boost_per_card : 100;
+                    var gyInst = srcHeroB ? graveyardHero : graveyardEnemy;
+                    var cnt2 = 0;
+                    if (instance_exists(gyInst)) {
+                        var gyc = gyInst.cards;
+                        for (var k = 0; k < array_length(gyc); k++) { var cd3 = gyc[k]; if (is_struct(cd3) && object_is_ancestor(cd3.object_index, oCardMonster) && variable_struct_exists(cd3, "genre") && string_lower(cd3.genre) == string_lower(gen)) cnt2++; }
+                    }
+                    totalBoost = cnt2 * per2;
+                    atkVal = totalBoost;
+                }
+                var tgtG = card;
+                if (object_is_ancestor(card.object_index, oCardMagic) && variable_instance_exists(card, "equipped_target")) { tgtG = card.equipped_target; }
+                if (agg) {
+                    var srcKeyG = "effect:" + string(effect.effect_type) + ":" + string(card.id) + ":" + string(variable_struct_exists(effect, "id") ? effect.id : -1);
+                    if (object_is_ancestor(card.object_index, oCardMagic)) { srcKeyG = "equip:" + string(card.id); }
+                    buffSetContribution(tgtG, srcKeyG, atkVal, defVal);
+                    buffRecompute(tgtG);
+                    return true;
+                } else {
+                    if (atkVal != 0) modifyAttack(tgtG, atkVal, false);
+                    if (defVal != 0) modifyDefense(tgtG, defVal, false);
+                    return true;
+                }
+            }
+            return false;
+        }
             
         case EFFECT_DISCARD:
             // Effet unifié de défausse (main uniquement) avec critères et options
