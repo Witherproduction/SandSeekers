@@ -81,7 +81,7 @@ initializeDatabase();
 
 // Fonction d'initialisation
 function initializeDatabase() {
-    show_debug_message("=== Initialisation de la base de données ===");
+    // Debug global supprimé
     // Synchronisation: toujours copier la DB depuis le dossier de l'exe vers AppData (WD)
     // Objectif: garantir que les JSON mis à jour dans la release écrasent les versions locales obsolètes
     var wd_datafile = CARDS_DATABASE_SAVE_FILE; // working_directory/datafiles/cards_database.json

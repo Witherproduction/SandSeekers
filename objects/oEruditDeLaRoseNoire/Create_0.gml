@@ -19,19 +19,16 @@ effects = [
         effect_type: EFFECT_SUMMON,
         summon_mode: "named",
         target_object: "oPetiteSorciereDeLaRoseNoire",
-        description: "À l'invocation : Invoquez spécialement une Petite Sorcière de la Rose noire depuis la main, le deck ou le cimetière."
     },
     {
         trigger: TRIGGER_ON_SUMMON,
         effect_type: EFFECT_SUMMON,
         summon_mode: "named",
         target_object: "oSorciereDeLaRoseNoire",
-        description: "À l'invocation : Invoquez spécialement une Sorcière de la Rose noire depuis la main, le deck ou le cimetière."
     },
     {
         trigger: TRIGGER_ENTER_GRAVEYARD,
         effect_type: EFFECT_SEARCH,
         search_archetype: "Rose noire",
-        description: "Tombe : Ajoutez une carte 'Rose noire' depuis votre deck à votre main."
     }
 ];

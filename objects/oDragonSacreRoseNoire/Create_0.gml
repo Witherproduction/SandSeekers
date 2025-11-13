@@ -28,7 +28,6 @@ effects = [
         trigger: TRIGGER_CONTINUOUS,
         effect_type: EFFECT_BOOST_ATK_PER_GRAVEYARD_ARCHETYPE,
         archetype: "Rose noire",
-        boost_per_card: 500,
-        description: "Gagne 500 ATK par monstre 'Rose noire' dans les cimetières."
+        boost_per_card: 500,        
     }
 ];

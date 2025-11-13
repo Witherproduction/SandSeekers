@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sAIPositioning",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sAIPositioning",
+  "parent":{
+    "name":"IA",
+    "path":"folders/Scripts/IA.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

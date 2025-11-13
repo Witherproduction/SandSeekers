@@ -23,13 +23,15 @@ array_push(effects, {
     destination: "Hand",
     search_criteria: { genre: "Dragon", type: "Monster" },
     random_select: true,
-    // Système de flux : enchaîne automatiquement avec l'invocation si niveau 1
-    flow_next: {
-        effect_type: EFFECT_SUMMON,
-        summon_mode: "source_from_hand",
-        criteria: { type: "Monster", genre: "Dragon", star_eq: 1 },
-        trigger_condition: "search_success", // Se déclenche seulement si la recherche a réussi
-        description: "Invoque automatiquement le Dragon trouvé s'il est de niveau 1."
-    },
+    flow: [
+        { effect_type: EFFECT_TEMPO, ms: 1000 },
+        {
+            effect_type: EFFECT_SUMMON,
+            summon_mode: "source_from_hand",
+            criteria: { type: "Monster", genre: "Dragon", star_eq: 1 },
+            trigger_condition: "search_success",
+            description: "Invoque automatiquement le Dragon trouvé s'il est de niveau 1."
+        }
+    ],
     description: "Appel : Ajoute un Dragon de votre deck à votre main. Invoque le dragon s'il est de niveau 1."
 });

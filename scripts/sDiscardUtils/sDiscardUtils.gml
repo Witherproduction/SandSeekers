@@ -54,10 +54,11 @@ function discardRandomFromHandToGraveyard(ownerIsHero) {
         if (variable_instance_exists(handInst, "updateDisplay")) { handInst.updateDisplay(); }
     }
 
-    // Ajouter au cimetière et détruire l'instance
+    global.discard_in_progress = true;
     gyInst.addToGraveyard(card);
     card.zone = "Graveyard";
     instance_destroy(card);
+    global.discard_in_progress = false;
 
     return true;
 }
@@ -83,6 +84,7 @@ function discardFromHandToGraveyard(ownerIsHero, amount) {
         return false;
     }
 
+    global.discard_in_progress = true;
     for (var i = 0; i < toDiscard; i++) {
         var idx = ds_list_size(handInst.cards) - 1;
         if (idx < 0) break;
@@ -110,11 +112,11 @@ function discardFromHandToGraveyard(ownerIsHero, amount) {
             if (variable_instance_exists(handInst, "updateDisplay")) { handInst.updateDisplay(); }
         }
 
-        // Mouvement logique vers le cimetière + trigger interne
         gyInst.addToGraveyard(card);
         card.zone = "Graveyard";
         instance_destroy(card);
     }
+    global.discard_in_progress = false;
 
     return true;
 }
@@ -131,6 +133,7 @@ function discardSpecificCardsToGraveyard(ownerIsHero, cardsList) {
     if (is_undefined(cardsList)) return false;
 
     var count = is_array(cardsList) ? array_length(cardsList) : ds_list_size(cardsList);
+    global.discard_in_progress = true;
     for (var i = 0; i < count; i++) {
         var card = is_array(cardsList) ? cardsList[i] : ds_list_find_value(cardsList, i);
         if (card == noone || !instance_exists(card)) continue;
@@ -158,11 +161,11 @@ function discardSpecificCardsToGraveyard(ownerIsHero, cardsList) {
             if (variable_instance_exists(handInst, "updateDisplay")) { handInst.updateDisplay(); }
         }
 
-        // Mouvement logique vers le cimetière + triggers
         gyInst.addToGraveyard(card);
         card.zone = "Graveyard";
         instance_destroy(card);
     }
+    global.discard_in_progress = false;
 
     return true;
 }
@@ -205,6 +208,7 @@ function discardFromHandToGraveyardExcludingCard(ownerIsHero, amount, excluded) 
 
     // Parcours depuis la droite de la main; sauter la carte exclue
     var discarded = 0;
+    global.discard_in_progress = true;
     var idx = ds_list_size(handInst.cards) - 1;
     while (discarded < toDiscard && idx >= 0) {
         var card = ds_list_find_value(handInst.cards, idx);
@@ -233,12 +237,12 @@ function discardFromHandToGraveyardExcludingCard(ownerIsHero, amount, excluded) 
             if (variable_instance_exists(handInst, "updateDisplay")) { handInst.updateDisplay(); }
         }
 
-        // Mouvement logique vers le cimetière + triggers
         gyInst.addToGraveyard(card);
         card.zone = "Graveyard";
         instance_destroy(card);
         discarded++;
     }
+    global.discard_in_progress = false;
 
     return (discarded == toDiscard);
 }

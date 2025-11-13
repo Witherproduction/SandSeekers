@@ -15,13 +15,15 @@ description = "Vous pouvez défaussez cette carte de votre main pour ajouter une
 effects = [
     {
         id: 1,
-        effect_type: EFFECT_DISCARD,
-        description: "Défaussez cette carte de votre main pour ajouter une carte 'Rose noire' du deck à votre main.",
+        effect_type: EFFECT_DISCARD,        
         selection: { mode: "self" },
-        flow_next: {
-            effect_type: EFFECT_SEARCH,
-            search_archetype: "Rose noire"
-        },
+        flow: [
+            { effect_type: EFFECT_TEMPO, ms: 1000 },
+            {
+                effect_type: EFFECT_SEARCH,
+                search_archetype: "Rose noire"
+            }
+        ],
         conditions: {
             owner: "Hero",
             zone: "Hand",

@@ -20,6 +20,5 @@ array_push(effects, {
     effect_type: EFFECT_SEARCH,
     search_criteria: { archetype: "Rose noire", type: "Magic" },
     random_select: true,
-    description: "À la fin du tour: ajoutez aléatoirement une carte Magie 'Rose noire' depuis votre deck à votre main.",
     conditions: { once_per_turn: true }
 });

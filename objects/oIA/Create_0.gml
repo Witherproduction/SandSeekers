@@ -4,9 +4,12 @@ if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_me
 // Méthodes
 ///////////////////////////////////////////////////////////////////////
 
-if (!variable_global_exists("IA_ACTION_DELAY_FRAMES")) global.IA_ACTION_DELAY_FRAMES = 2 * room_speed;
+if (!variable_global_exists("IA_ACTION_DELAY_FRAMES")) global.IA_ACTION_DELAY_FRAMES = 1 * room_speed;
 if (!variable_instance_exists(id, "iaDelayFrames")) iaDelayFrames = 0;
 if (!variable_instance_exists(id, "iaNextPhasePending")) iaNextPhasePending = false;
+// File des actions manuelles (effets, sorts) et état de traitement
+if (!variable_instance_exists(id, "manualEffectsQueue")) manualEffectsQueue = [];
+if (!variable_instance_exists(id, "manualEffectProcessing")) manualEffectProcessing = false;
 scheduleNextPhase = function() { iaNextPhasePending = true; iaDelayFrames = (variable_global_exists("IA_ACTION_DELAY_FRAMES") ? global.IA_ACTION_DELAY_FRAMES : room_speed); };
 #region Function manageOrientation
 manageOrientation = function() {
@@ -26,54 +29,19 @@ manageOrientation = function() {
         }
 
         if (cardEnemy != 0 && instance_exists(cardEnemy) && !cardEnemy.orientationChangedThisTurn) {
-            // Si la carte est face cachée, l'IA peut décider de la retourner en attaque
-            if (cardEnemy.isFaceDown) {
-                var canAttackEffectively = false;
-                var heroHasMonsters = false;
-                for (var j = 0; j < array_length(fieldMonsterHero.cards); j++) {
-                    var cardHero = fieldMonsterHero.cards[j];
-                    if (cardHero != 0 && instance_exists(cardHero)) {
-                        heroHasMonsters = true;
-                        var effEnemyAtk = variable_struct_exists(cardEnemy, "effective_attack") ? cardEnemy.effective_attack : cardEnemy.attack;
-                        var effHeroAtk = variable_struct_exists(cardHero, "effective_attack") ? cardHero.effective_attack : cardHero.attack;
-                        var effHeroDef = variable_struct_exists(cardHero, "effective_defense") ? cardHero.effective_defense : cardHero.defense;
-                        if (dif == 1) {
-                            if (effEnemyAtk > max(effHeroAtk, effHeroDef)) { canAttackEffectively = true; break; }
-                        } else {
-                            if (effEnemyAtk > effHeroAtk || effEnemyAtk > effHeroDef) { canAttackEffectively = true; break; }
-                        }
-                    }
-                }
-                if (!heroHasMonsters || canAttackEffectively) {
-                    cardEnemy.orientation = "Attack";
-                    cardEnemy.position_anim_active = true;
-                    cardEnemy.anim_rotate_speed = (variable_global_exists("ANIM_ROTATE_SPEED") ? global.ANIM_ROTATE_SPEED : 6);
-                    cardEnemy.anim_flip_speed = (variable_global_exists("ANIM_FLIP_SPEED") ? global.ANIM_FLIP_SPEED : 0.03);
-                    cardEnemy.anim_flip_orig_scale = cardEnemy.image_xscale;
-                    cardEnemy.anim_pre_delay_frames = (variable_global_exists("ANIM_ROTATE_PRE_DELAY_FRAMES") ? global.ANIM_ROTATE_PRE_DELAY_FRAMES : 6);
-                    cardEnemy.anim_phase = "flip_in";
-                    cardEnemy.target_angle = 180;
-                    cardEnemy.target_orientation = "Attack";
-                    cardEnemy.image_index = 0;
-                    cardEnemy.orientationChangedThisTurn = true;
-                    if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("IA retourne monstre face cachée en attaque (anim)");
-                }
-            }
+            if (cardEnemy.isFaceDown) { continue; }
 
             // Analyser les menaces du héros
             for (var j = 0; j < array_length(fieldMonsterHero.cards); j++) {
                 var cardHero = fieldMonsterHero.cards[j];
                 if (cardHero != 0 && instance_exists(cardHero) && instance_exists(cardEnemy)) {
-                    if (dif == 1) {
-                        var eAtkE = variable_struct_exists(cardEnemy, "effective_attack") ? cardEnemy.effective_attack : cardEnemy.attack;
-                        var eDefE = variable_struct_exists(cardEnemy, "effective_defense") ? cardEnemy.effective_defense : cardEnemy.defense;
-                        var eAtkH = variable_struct_exists(cardHero, "effective_attack") ? cardHero.effective_attack : cardHero.attack;
-                        var eDefH = variable_struct_exists(cardHero, "effective_defense") ? cardHero.effective_defense : cardHero.defense;
-                        if ((eAtkH >= eDefE && eAtkE < eDefH) || (eAtkH > eDefE && eDefE > eAtkE)) { shouldDefend = true; break; }
-                    } else {
-                        if (cardHero.attack >= cardEnemy.defense && cardEnemy.attack < cardHero.defense) { shouldDefend = true; break; }
-                        if (cardHero.attack > cardEnemy.defense && cardEnemy.defense > cardEnemy.attack) { shouldDefend = true; break; }
-                    }
+                    var eAtkE = (variable_struct_exists(cardEnemy, "effective_attack") ? cardEnemy.effective_attack : (variable_instance_exists(cardEnemy, "attack") ? cardEnemy.attack : 0));
+                    var eDefE = (variable_struct_exists(cardEnemy, "effective_defense") ? cardEnemy.effective_defense : (variable_instance_exists(cardEnemy, "defense") ? cardEnemy.defense : 0));
+                    var eAtkH = (variable_struct_exists(cardHero, "effective_attack") ? cardHero.effective_attack : (variable_instance_exists(cardHero, "attack") ? cardHero.attack : 0));
+                    var eDefH = (variable_struct_exists(cardHero, "effective_defense") ? cardHero.effective_defense : (variable_instance_exists(cardHero, "defense") ? cardHero.defense : 0));
+                    var heroInAttack = (variable_instance_exists(cardHero, "orientation") && cardHero.orientation == "Attack");
+                    if (heroInAttack && eAtkH > eAtkE) { shouldDefend = true; break; }
+                    if ((eAtkH >= eDefE && eAtkE < eDefH) || (eAtkH > eDefE && eDefE > eAtkE)) { shouldDefend = true; break; }
                 }
             }
 
@@ -93,6 +61,7 @@ manageOrientation = function() {
                     if (variable_instance_exists(cardEnemy.id, "isFaceDown")) cardEnemy.isFaceDown = false;
                     cardEnemy.orientationChangedThisTurn = true;
                     if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("IA change monstre en défense visible (anim)");
+                    continue;
                 } else if (!shouldDefend && (cardEnemy.orientation == "Defense" || cardEnemy.orientation == "DefenseVisible")) {
                     cardEnemy.orientation = "Attack";
                     cardEnemy.position_anim_active = true;
@@ -106,6 +75,7 @@ manageOrientation = function() {
                     cardEnemy.image_index = 0;
                     cardEnemy.orientationChangedThisTurn = true;
                     if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("IA change monstre en attaque (anim)");
+                    continue;
                 }
             }
         }
@@ -183,108 +153,38 @@ aiEvaluateContinuousNetGain = function(card) { return AI_EvaluateContinuousNetGa
 aiEstimateCardStrength = function(mon) { return AI_EstimateCardStrength(mon); }
 aiEvaluateEffectNetGain = function(card, effect, target) { return AI_EvaluateEffectNetGain(card, effect, target); }
 
-aiChooseBestTarget = function(effectType) {
-    var best = noone; var bestScore = -100000;
-    var dif = (variable_global_exists("IA_DIFFICULTY") ? global.IA_DIFFICULTY : 0);
+aiChooseBestTarget = function(effectType) { return AI_Targeting_ChooseBestTarget(effectType); }
 
-    // Monstres héros
-    for (var i = 0; i < array_length(fieldMonsterHero.cards); i++) {
-        var cand = fieldMonsterHero.cards[i];
-        if (cand != 0 && instance_exists(cand)) {
-            var atk = variable_instance_exists(cand, "attack") ? cand.attack : 0;
-            var def = variable_instance_exists(cand, "defense") ? cand.defense : 0;
-            var eatk = variable_struct_exists(cand, "effective_attack") ? cand.effective_attack : atk;
-            var edef = variable_struct_exists(cand, "effective_defense") ? cand.effective_defense : def;
-            var sc = max(atk, def);
-            if (dif == 1) {
-                var scHard = max(eatk, edef);
-                if (variable_instance_exists(cand, "orientation") && cand.orientation == "Attack") scHard += 80;
-                sc = scHard;
-            }
-            if (sc > bestScore) { bestScore = sc; best = cand; }
-        }
-    }
-    // Magies/Pièges si aucun monstre sélectionné
-    if (best == noone) {
-        var mt = fieldManagerHero.getField("MagicTrap");
-        if (mt != noone && variable_struct_exists(mt, "cards")) {
-            for (var j = 0; j < array_length(mt.cards); j++) {
-                var m = mt.cards[j];
-                if (m != 0 && instance_exists(m)) { var sc2 = (dif == 1) ? 150 : 100; if (sc2 > bestScore) { bestScore = sc2; best = m; } }
-            }
-        }
-    }
-    return best;
-}
-
-aiEffectPriority = function(card, effect) {
-    var base = 0;
-    var eType = variable_struct_exists(effect, "effect_type") ? effect.effect_type : -1;
-    var dif = (variable_global_exists("IA_DIFFICULTY") ? global.IA_DIFFICULTY : 0);
-
-    var heroHas = false; var ourCount = 0;
-    for (var i = 0; i < 5; i++) { if (fieldMonsterHero.cards[i] != 0 && instance_exists(fieldMonsterHero.cards[i])) heroHas = true; if (fieldMonsterEnemy.cards[i] != 0 && instance_exists(fieldMonsterEnemy.cards[i])) ourCount++; }
-
-    if (eType == EFFECT_DESTROY_TARGET || eType == EFFECT_BANISH_TARGET || eType == EFFECT_RETURN_TO_HAND) {
-        var tgt = aiChooseBestTarget(eType);
-        var tAtk = (tgt != noone && variable_instance_exists(tgt, "attack")) ? tgt.attack : 0;
-        base = 1000 + tAtk;
-        if (dif == 1 && heroHas) base += 300;
-    } else if (eType == EFFECT_GAIN_ATTACK || eType == EFFECT_GAIN_DEFENSE || eType == EFFECT_SET_ATTACK || eType == EFFECT_SET_DEFENSE) {
-        base = 600;
-        if (dif == 1 && ourCount > 0) base += 150;
-    } else if (eType == EFFECT_DRAW_CARDS || eType == EFFECT_SEARCH) {
-        base = 300;
-        if (dif == 1 && ourCount == 0) base += 150; // chercher du tempo si board vide
-    } else if (eType == EFFECT_SUMMON) {
-        var emptySlots = 0; for (var i2 = 0; i2 < 5; i2++) { if (fieldMonsterEnemy.cards[i2] == 0) emptySlots++; }
-        base = (emptySlots > 0) ? 500 : 50;
-        if (dif == 1 && emptySlots > 0) base += 100;
-    } else if (eType == EFFECT_NEGATE_EFFECT) {
-        var mt = fieldManagerHero.getField("MagicTrap"); var hasMT = false;
-        if (mt != noone && variable_struct_exists(mt, "cards")) {
-            for (var i3 = 0; i3 < array_length(mt.cards); i3++) { if (mt.cards[i3] != 0 && instance_exists(mt.cards[i3])) { hasMT = true; break; } }
-        }
-        base = hasMT ? 900 : 200;
-        if (dif == 1 && hasMT) base += 150;
-    } else {
-        base = 200;
-    }
-    return base;
-}
+aiEffectPriority = function(card, effect) { return AI_EffectPriority(card, effect); }
 
 // Sélectionne la meilleure cible d'équipement (Artéfact) parmi nos monstres
-aiChooseBestEquipTargetFor = function(card, effect) {
-    var best = noone; var bestScore = -100000;
-    var allyOnly = variable_struct_exists(effect, "ally_only") ? effect.ally_only : true;
-    var allowedGenres = variable_struct_exists(effect, "allowed_genres") ? effect.allowed_genres : undefined;
-    for (var i = 0; i < array_length(fieldMonsterEnemy.cards); i++) {
-        var cand = fieldMonsterEnemy.cards[i];
-        if (cand != 0 && instance_exists(cand)) {
-            if (!(variable_instance_exists(cand, "zone") && (cand.zone == "Field" || cand.zone == "FieldSelected"))) continue;
-            if (variable_instance_exists(cand, "orientation") && variable_instance_exists(cand, "isFaceDown")) {
-                if (cand.orientation == "Defense" && cand.isFaceDown) continue;
+aiChooseBestEquipTargetFor = function(card, effect) { return AI_Targeting_ChooseBestEquipTargetFor(card, effect); }
+
+// Sélection d’une unique action à réaliser pendant la Main Phase (mix effets/magies)
+aiPickBestEffectAction = function() {
+    var actions = AI_ActionSelect_BuildMainPhase();
+    if (actions == undefined) actions = [];
+    return (array_length(actions) > 0) ? actions[0] : noone;
+}
+
+aiExecuteEffectAction = function(action) {
+    return AI_ActionExec_Run(action);
+}
+
+aiPickBestMonsterSummon = function() {
+    var card = noone; var bestScore = -100000;
+    if (ds_exists(handEnemy.cards, ds_type_list)) {
+        var hsize = ds_list_size(handEnemy.cards);
+        for (var hi = 0; hi < hsize; hi++) {
+            var cand = ds_list_find_value(handEnemy.cards, hi);
+            if (cand != 0 && instance_exists(cand) && cand.type == "Monster") {
+                var sc = evaluateCardPriority(cand);
+                if (sc > bestScore) { bestScore = sc; card = cand; }
             }
-            if (allyOnly) {
-                if (!(variable_instance_exists(cand, "isHeroOwner") && !cand.isHeroOwner)) continue;
-            }
-            if (allowedGenres != undefined) {
-                var g = variable_instance_exists(cand, "genre") ? cand.genre : "";
-                var okGenre = false;
-                for (var gi = 0; gi < array_length(allowedGenres); gi++) {
-                    if (string_lower(g) == string_lower(allowedGenres[gi])) { okGenre = true; break; }
-                }
-                if (!okGenre) continue;
-            }
-            var atk = variable_instance_exists(cand, "attack") ? cand.attack : 0;
-            var def = variable_instance_exists(cand, "defense") ? cand.defense : 0;
-            var eatk = variable_struct_exists(cand, "effective_attack") ? cand.effective_attack : atk;
-            var edef = variable_struct_exists(cand, "effective_defense") ? cand.effective_defense : def;
-            var sc = eatk + edef;
-            if (sc > bestScore) { bestScore = sc; best = cand; }
         }
     }
-    return best;
+    if (card == noone) return noone;
+    return { card: card, priority: bestScore };
 }
 
 useEffectsMainPhase = function() {
@@ -318,7 +218,7 @@ useEffectsMainPhase = function() {
                     }
                     // Ne pas auto-poser les Artéfacts s'il n'y a pas de cible à équiper
                     if (isArtifact) {
-                        var tgtEquip = (equipEffect != noone) ? aiChooseBestEquipTargetFor(c0, equipEffect) : noone;
+                        var tgtEquip = (equipEffect != noone) ? AI_Targeting_ChooseBestEquipTargetFor(c0, equipEffect) : noone;
                         if (tgtEquip == noone) { hasContinuous = false; }
                     }
                     if (hasContinuous) {
@@ -337,7 +237,7 @@ useEffectsMainPhase = function() {
                                 registerTriggerEvent(TRIGGER_ON_SPELL_CAST, c0, ctx0);
                                 // Si c’est un Artéfact et qu’une cible valide existe, lancer immédiatement la sélection d’équipement
                                 if (isArtifact && equipEffect != noone) {
-                                    var tgtEquipNow = (typeof(tgtEquip) != undefined) ? tgtEquip : aiChooseBestEquipTargetFor(c0, equipEffect);
+                                    var tgtEquipNow = (typeof(tgtEquip) != undefined) ? tgtEquip : AI_Targeting_ChooseBestEquipTargetFor(c0, equipEffect);
                                     if (tgtEquipNow != noone) {
                                         c0.equip_pending = true; // éviter destruction par l’effet continu avant sélection
                                         var ctxEquipNow = { owner_is_hero: false, target: tgtEquipNow };
@@ -375,7 +275,7 @@ useEffectsMainPhase = function() {
                     if (!hasManual) continue; if (!checkTriggerConditions(c, e, { owner_is_hero: false })) continue;
                     var tgt = noone; var eType = variable_struct_exists(e, "effect_type") ? e.effect_type : -1;
                     if (eType == EFFECT_EQUIP_SELECT_TARGET) {
-                        tgt = aiChooseBestEquipTargetFor(c, e);
+                        tgt = AI_Targeting_ChooseBestEquipTargetFor(c, e);
                         if (tgt == noone) continue;
                     } else if (aiIsTargetedEffect(eType)) { tgt = aiChooseBestTarget(eType); if (tgt == noone) continue; }
                     var pr = aiEffectPriority(c, e);
@@ -397,7 +297,7 @@ useEffectsMainPhase = function() {
                 if (!hasManual2) continue; if (!checkTriggerConditions(c2, e2, { owner_is_hero: false })) continue;
                 var tgt2 = noone; var eType2 = variable_struct_exists(e2, "effect_type") ? e2.effect_type : -1;
                 if (eType2 == EFFECT_EQUIP_SELECT_TARGET) {
-                    tgt2 = aiChooseBestEquipTargetFor(c2, e2);
+                    tgt2 = AI_Targeting_ChooseBestEquipTargetFor(c2, e2);
                     if (tgt2 == noone) continue;
                 } else if (aiIsTargetedEffect(eType2)) { tgt2 = aiChooseBestTarget(eType2); if (tgt2 == noone) continue; }
                 var pr2 = aiEffectPriority(c2, e2);
@@ -417,7 +317,7 @@ useEffectsMainPhase = function() {
                     if (!hasManual3) continue; if (!checkTriggerConditions(c3, e3, { owner_is_hero: false })) continue;
                     var tgt3 = noone; var eType3 = variable_struct_exists(e3, "effect_type") ? e3.effect_type : -1;
                     if (eType3 == EFFECT_EQUIP_SELECT_TARGET) {
-                        tgt3 = aiChooseBestEquipTargetFor(c3, e3);
+                        tgt3 = AI_Targeting_ChooseBestEquipTargetFor(c3, e3);
                         if (tgt3 == noone) continue;
                     } else if (aiIsTargetedEffect(eType3)) { tgt3 = aiChooseBestTarget(eType3); if (tgt3 == noone) continue; }
                     var pr3 = aiEffectPriority(c3, e3);
@@ -461,7 +361,7 @@ useQuickEffectsBeforeAttack = function() {
                     if (checkTriggerConditions(c, e, { owner_is_hero: false })) {
                         var tgt = noone; var eType = variable_struct_exists(e, "effect_type") ? e.effect_type : -1;
                         if (eType == EFFECT_EQUIP_SELECT_TARGET) {
-                            tgt = aiChooseBestEquipTargetFor(c, e);
+                            tgt = AI_Targeting_ChooseBestEquipTargetFor(c, e);
                         } else if (aiIsTargetedEffect(eType)) {
                             tgt = aiChooseBestTarget(eType);
                         }
@@ -481,134 +381,84 @@ useQuickEffectsBeforeAttack = function() {
 summon = function() {
     if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("### oIA.summon")
 
-    if (game.hasSummonedThisTurn[1]) { if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("IA a déjà invoqué un monstre ce tour"); scheduleNextPhase(); return; }
-
-    // Effets de phase principale avant
-    useEffectsMainPhase();
-
-    // Choisir le meilleur monstre à invoquer
-    var card = noone; var bestScore = -100000;
-    if (ds_exists(handEnemy.cards, ds_type_list)) {
-        var hsize = ds_list_size(handEnemy.cards);
-        for (var hi = 0; hi < hsize; hi++) {
-            var cand = ds_list_find_value(handEnemy.cards, hi);
-            if (cand != 0 && instance_exists(cand) && cand.type == "Monster") {
-                var sc = evaluateCardPriority(cand);
-                if (sc > bestScore) { bestScore = sc; card = cand; }
-            }
+    if (game.hasSummonedThisTurn[1]) { 
+        if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("IA a déjà invoqué un monstre ce tour"); 
+        // Si une file d’actions est en cours, ne pas forcer la transition ici
+        if (!manualEffectProcessing || array_length(manualEffectsQueue) == 0) {
+            scheduleNextPhase(); 
         }
+        return; 
     }
 
-    if (card) {
-        var requiredSacrificeLevel = getSacrificeLevel(card.star);
-        if (requiredSacrificeLevel > 0) {
-            var availableSacrifices = [];
-            for (var i = 0; i < 5; i++) {
-                if (fieldMonsterEnemy.cards[i] != 0) {
-                    var sac = fieldMonsterEnemy.cards[i];
-                    if (instance_exists(sac) && sac.type == "Monster") array_push(availableSacrifices, sac);
-                }
-            }
-            var requiredSacrificeCount = (requiredSacrificeLevel == 1) ? 1 : 2;
-            if (array_length(availableSacrifices) < requiredSacrificeCount) {
-                if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("IA ne peut pas invoquer ce monstre (sacrifices insuffisants). Recherche d'un fallback sans sacrifice...");
-                var fallback = noone;
-                if (ds_exists(handEnemy.cards, ds_type_list)) {
-                    var hsize2 = ds_list_size(handEnemy.cards);
-                    for (var hi2 = 0; hi2 < hsize2; hi2++) {
-                        var cand2 = ds_list_find_value(handEnemy.cards, hi2);
-                        if (cand2 != 0 && instance_exists(cand2) && cand2.type == "Monster") {
-                            var req2 = getSacrificeLevel(cand2.star);
-                            if (req2 == 0) { fallback = cand2; break; }
+    // Boucle d’actions mélangées pendant la Main Phase: effets <-> invocation
+    var actionLimit = 6; // garde de sécurité pour éviter les boucles excessives
+    var actionsDone = 0;
+    while (actionsDone < actionLimit) {
+        var bestEffectAction = aiPickBestEffectAction();
+        var bestSummonCand = (game.hasSummonedThisTurn[1]) ? noone : aiPickBestMonsterSummon();
+        var effScore = (bestEffectAction != noone) ? bestEffectAction.priority : -100000;
+        var monScore = (bestSummonCand != noone) ? bestSummonCand.priority : -100000;
+
+        if (effScore == -100000 && monScore == -100000) { break; }
+
+        if (effScore >= monScore) {
+            var did = aiExecuteEffectAction(bestEffectAction);
+            if (!did) { break; }
+        } else {
+            // Invoker le monstre choisi (réutilise la logique existante de placement et sacrifices)
+            var card = bestSummonCand.card;
+            var requiredSacrificeLevel = getSacrificeLevel(card.star);
+            if (requiredSacrificeLevel > 0) {
+                var availableSacrifices = [];
+                for (var i = 0; i < 5; i++) { if (fieldMonsterEnemy.cards[i] != 0) { var sac = fieldMonsterEnemy.cards[i]; if (instance_exists(sac) && sac.type == "Monster") array_push(availableSacrifices, sac); } }
+                var requiredSacrificeCount = (requiredSacrificeLevel == 1) ? 1 : 2;
+                if (array_length(availableSacrifices) < requiredSacrificeCount) {
+                    // Fallback sans sacrifice
+                    var fallback = noone;
+                    if (ds_exists(handEnemy.cards, ds_type_list)) {
+                        var hsize2 = ds_list_size(handEnemy.cards);
+                        for (var hi2 = 0; hi2 < hsize2; hi2++) {
+                            var cand2 = ds_list_find_value(handEnemy.cards, hi2);
+                            if (cand2 != 0 && instance_exists(cand2) && cand2.type == "Monster" && getSacrificeLevel(cand2.star) == 0) { fallback = cand2; break; }
                         }
                     }
+                    if (fallback != noone) { card = fallback; requiredSacrificeLevel = 0; requiredSacrificeCount = 0; }
+                    else { break; }
                 }
-                if (fallback != noone) {
-                    if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Fallback sélectionné: " + string(variable_instance_exists(fallback, "name") ? fallback.name : object_get_name(fallback.object_index)));
-                    card = fallback; requiredSacrificeLevel = 0; requiredSacrificeCount = 0;
-                } else { if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Aucun fallback sans sacrifice disponible. Passage à la phase suivante."); scheduleNextPhase(); return; }
-            }
-            var selectedSacrifices = [];
-            // Trier par ATK croissante pour sacrifier les plus faibles
-            for (var ii = 0; ii < array_length(availableSacrifices) - 1; ii++) {
-                for (var jj = ii + 1; jj < array_length(availableSacrifices); jj++) {
-                    if (availableSacrifices[ii].attack > availableSacrifices[jj].attack) {
-                        var tmp = availableSacrifices[ii]; availableSacrifices[ii] = availableSacrifices[jj]; availableSacrifices[jj] = tmp;
+                // Trier par ATK effective croissante pour sacrifier les plus faibles
+                for (var ii = 0; ii < array_length(availableSacrifices) - 1; ii++) {
+                    for (var jj = ii + 1; jj < array_length(availableSacrifices); jj++) {
+                        var sA = variable_struct_exists(availableSacrifices[ii], "effective_attack") ? availableSacrifices[ii].effective_attack : (variable_instance_exists(availableSacrifices[ii], "attack") ? availableSacrifices[ii].attack : 0);
+                        var sB = variable_struct_exists(availableSacrifices[jj], "effective_attack") ? availableSacrifices[jj].effective_attack : (variable_instance_exists(availableSacrifices[jj], "attack") ? availableSacrifices[jj].attack : 0);
+                        if (sA > sB) { var tmpS = availableSacrifices[ii]; availableSacrifices[ii] = availableSacrifices[jj]; availableSacrifices[jj] = tmpS; }
                     }
                 }
+                var selectedSacrifices = [];
+                var reqCount = (requiredSacrificeLevel == 1) ? 1 : (requiredSacrificeLevel == 2 ? 2 : 0);
+                for (var iSel = 0; iSel < reqCount && iSel < array_length(availableSacrifices); iSel++) { array_push(selectedSacrifices, availableSacrifices[iSel]); }
+                if (reqCount > 0 && array_length(selectedSacrifices) >= reqCount) { performSacrifices(selectedSacrifices, false); }
             }
-        var summonedValue = (variable_instance_exists(card, "attack") ? card.attack : 0) + (variable_instance_exists(card, "defense") ? card.defense : 0) + (variable_instance_exists(card, "star") ? card.star : 0) * 100;
-        // Utiliser les stats effectives pour évaluer la qualité réelle des échanges
-        var effCandAtk = variable_struct_exists(card, "effective_attack") ? card.effective_attack : (variable_instance_exists(card, "attack") ? card.attack : 0);
-        var effCandDef = variable_struct_exists(card, "effective_defense") ? card.effective_defense : (variable_instance_exists(card, "defense") ? card.defense : 0);
-        var summonedValue = effCandAtk + effCandDef + ((variable_instance_exists(card, "star") ? card.star : 0) * 50);
-        var sacrificeValue = 0;
-        var requiredSacrificeCount = (requiredSacrificeLevel == 1) ? 1 : (requiredSacrificeLevel == 2 ? 2 : 0);
-        var highestSacEff = 0;
-        for (var s = 0; s < requiredSacrificeCount && s < array_length(availableSacrifices); s++) {
-            var sCard = availableSacrifices[s];
-            if (sCard != 0 && instance_exists(sCard)) {
-                var sEffAtk = variable_struct_exists(sCard, "effective_attack") ? sCard.effective_attack : (variable_instance_exists(sCard, "attack") ? sCard.attack : 0);
-                var sEffDef = variable_struct_exists(sCard, "effective_defense") ? sCard.effective_defense : (variable_instance_exists(sCard, "defense") ? sCard.defense : 0);
-                sacrificeValue += sEffAtk + sEffDef; // ne pas surpondérer les étoiles pour les sacrifices
-                highestSacEff = max(highestSacEff, max(sEffAtk, sEffDef));
-            }
-        }
-        var dif = (variable_global_exists("IA_DIFFICULTY") ? global.IA_DIFFICULTY : 0);
-        var heroMaxStat = 0; var heroHas = false;
-            for (var hk = 0; hk < 5; hk++) {
-                var hC = fieldMonsterHero.cards[hk];
-                if (hC != 0 && instance_exists(hC)) {
-                    heroHas = true;
-                    var ha = variable_struct_exists(hC, "effective_attack") ? hC.effective_attack : hC.attack;
-                    var hd = variable_struct_exists(hC, "effective_defense") ? hC.effective_defense : hC.defense;
-                    heroMaxStat = max(heroMaxStat, max(ha, hd));
-                }
-            }
-        var allowWorseTrade = (dif == 1 && heroHas && (max(effCandAtk, effCandDef) >= heroMaxStat));
-        var margin = (dif == 1 && allowWorseTrade) ? 200 : 0;
-        // Éviter les sacrifices défavorables: la carte invoquée doit dépasser la somme ET la meilleure des sacrifiées
-        if (requiredSacrificeCount > 0 && ((summonedValue + margin) <= sacrificeValue || max(effCandAtk, effCandDef) <= highestSacEff)) {
-            var fallback2 = noone;
-            if (ds_exists(handEnemy.cards, ds_type_list)) {
-                var hsize3 = ds_list_size(handEnemy.cards);
-                for (var hi3 = 0; hi3 < hsize3; hi3++) {
-                    var cand3 = ds_list_find_value(handEnemy.cards, hi3);
-                    if (cand3 != 0 && instance_exists(cand3) && cand3.type == "Monster" && getSacrificeLevel(cand3.star) == 0) { fallback2 = cand3; break; }
-                }
-            }
-            if (fallback2 != noone) {
-                if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Sacrifice défavorable évité. Fallback sans sacrifice: " + string(variable_instance_exists(fallback2, "name") ? fallback2.name : object_get_name(fallback2.object_index)));
-                card = fallback2; requiredSacrificeLevel = 0; requiredSacrificeCount = 0; selectedSacrifices = [];
-            } else { if (variable_global_exists("VERBOSE_LOGS") && global.VERBOSE_LOGS) show_debug_message("Sacrifice défavorable détecté, pas de fallback. Passage à la phase suivante."); scheduleNextPhase(); return; }
-        }
-            for (var iSel = 0; iSel < requiredSacrificeCount; iSel++) { array_push(selectedSacrifices, availableSacrifices[iSel]); }
-            if (requiredSacrificeCount > 0 && array_length(selectedSacrifices) >= requiredSacrificeCount) { performSacrifices(selectedSacrifices, false); }
-        }
-        var XYPos = fieldManagerEnemy.getCardPositionAvailableIA(card);
-        if (XYPos != -1) {
-            // Choix de position basé sur l'attaque effective adverse
+
+            var XYPos = fieldManagerEnemy.getCardPositionAvailableIA(card);
+            if (XYPos == -1) { break; }
             var heroMaxEffAtk = 0; var heroHasMonsters2 = false;
-            for (var k = 0; k < array_length(fieldMonsterHero.cards); k++) {
-                var cardHero2 = fieldMonsterHero.cards[k];
-                if (cardHero2 != 0 && instance_exists(cardHero2)) {
-                    heroHasMonsters2 = true;
-                    var effAtkHero2 = variable_struct_exists(cardHero2, "effective_attack") ? cardHero2.effective_attack : cardHero2.attack;
-                    if (effAtkHero2 > heroMaxEffAtk) heroMaxEffAtk = effAtkHero2;
-                }
-            }
+            for (var k = 0; k < array_length(fieldMonsterHero.cards); k++) { var cardHero2 = fieldMonsterHero.cards[k]; if (cardHero2 != 0 && instance_exists(cardHero2)) { heroHasMonsters2 = true; var effAtkHero2 = variable_struct_exists(cardHero2, "effective_attack") ? cardHero2.effective_attack : cardHero2.attack; if (effAtkHero2 > heroMaxEffAtk) heroMaxEffAtk = effAtkHero2; } }
             var candAtk = variable_struct_exists(card, "effective_attack") ? card.effective_attack : (variable_instance_exists(card, "attack") ? card.attack : 0);
-            var candDef = variable_instance_exists(card, "defense") ? card.defense : 0;
-            // Heuristique simple: si l'adversaire peut dépasser notre ATK, se placer en Défense
             var shouldSummonInDefense = (candAtk <= 0) || (heroHasMonsters2 && (heroMaxEffAtk >= candAtk));
             var orientation = shouldSummonInDefense ? "Defense" : "";
             handEnemy.summon(card, XYPos, orientation);
             game.hasSummonedThisTurn[1] = true;
-            useEffectsMainPhase();
+            // Espacer les actions : attendre 1s avant toute autre activation
+            iaDelayFrames = (variable_global_exists("IA_ACTION_DELAY_FRAMES") ? global.IA_ACTION_DELAY_FRAMES : room_speed);
+            break; // Ne faire qu'une action à la fois
         }
+        actionsDone++;
     }
     manageOrientation();
-    scheduleNextPhase();
+    // Si des actions manuelles ont été planifiées, laisser oIA.Step gérer la transition après dépilement
+    if (!manualEffectProcessing || array_length(manualEffectsQueue) == 0) {
+        scheduleNextPhase();
+    }
 }
 #endregion
 
@@ -646,12 +496,21 @@ iaAttackTryLaunchNext = function() {
                             var heroInAttack = (variable_instance_exists(cardHero, "orientation") && cardHero.orientation == "Attack");
                             var heroInDefense = (variable_instance_exists(cardHero, "orientation") && (cardHero.orientation == "Defense" || cardHero.orientation == "DefenseVisible"));
                             var isPoisoner = (variable_struct_exists(cardEnemy, "isPoisoner") && cardEnemy.isPoisoner);
-                            if ((heroInAttack && effEnemyAtk <= effHeroAtk && !(isPoisoner && effEnemyAtk == effHeroAtk)) || (heroInDefense && effEnemyAtk < effHeroDef && !(isPoisoner && effEnemyAtk == effHeroDef))) {
-                                attackValue = -100000; // Écarter cible suicidaire
+                            var defeatVsAtk = (heroInAttack && effEnemyAtk <= effHeroAtk);
+                            var defeatVsDef = (heroInDefense && effEnemyAtk <= effHeroDef);
+                            if (!isPoisoner && (defeatVsAtk || defeatVsDef)) {
+                                attackValue = -100000;
                             } else {
-                                if ((effEnemyAtk > effHeroDef) && (effHeroAtk < effEnemyDef)) { attackValue = 1000 + effHeroAtk; }
-                                else if (effEnemyAtk > effHeroAtk) { attackValue = 500 + (effEnemyAtk - effHeroAtk); }
-                                else { attackValue = 100 - effHeroAtk; }
+                                if (isPoisoner && (defeatVsAtk || defeatVsDef)) {
+                                    var poisonValue = effHeroAtk + effHeroDef;
+                                    var lpDamage = heroInAttack ? max(0, effHeroAtk - effEnemyAtk) : max(0, effHeroDef - effEnemyAtk);
+                                    var netGain = poisonValue - lpDamage - effEnemyAtk;
+                                    attackValue = (netGain > 0) ? (1200 + netGain) : (800 + netGain);
+                                } else {
+                                    if ((effEnemyAtk > effHeroDef) && (effHeroAtk < effEnemyDef)) { attackValue = 1000 + effHeroAtk; }
+                                    else if (effEnemyAtk > effHeroAtk) { attackValue = 500 + (effEnemyAtk - effHeroAtk); }
+                                    else { attackValue = 100 - effHeroAtk; }
+                                }
                             }
                             if (attackValue > bestValue) { bestValue = attackValue; bestTarget = j2; }
                         }

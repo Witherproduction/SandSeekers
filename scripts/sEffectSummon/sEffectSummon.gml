@@ -154,8 +154,24 @@ function specialSummonSelf(card, effect, context) {
     }
 
     // Pas de position prédéfinie:
-    // - Si c'est le joueur, afficher l'indicateur pour choisir le slot
-    // - Si c'est l'IA, choisir automatiquement le slot libre le plus à gauche et invoquer sur son terrain
+    // - Si l’effet demande l’auto-sélection du slot (gauche), invoquer automatiquement sans prompt
+    // - Sinon: joueur -> prompt; IA -> auto-slot gauche
+    var forceLeftmost = variable_struct_exists(effect, "auto_select_leftmost") && effect.auto_select_leftmost;
+    if (forceLeftmost) {
+        var slotA = getLeftmostFreeMonsterSlot(ownerIsHero);
+        if (slotA == noone) { show_debug_message("### specialSummonSelf: Aucun slot libre (auto-select)"); return false; }
+        UIManager.selectedSummonOrSet = "SpecialSummon";
+        var handInstA = ownerIsHero ? handHero : handEnemy;
+        var okA = handInstA.summon(card, [slotA.x, slotA.y, slotA.pos]);
+        UIManager.selectedSummonOrSet = "";
+        if (okA) {
+            var ctxA = { summon_mode: "SpecialSummon", owner_is_hero: ownerIsHero };
+            registerTriggerEvent(TRIGGER_ON_SUMMON, card, ctxA);
+            registerTriggerEvent(TRIGGER_ON_MONSTER_SUMMON, card, ctxA);
+        }
+        return okA;
+    }
+
     if (ownerIsHero) {
         UIManager.selectedSummonOrSet = "SpecialSummon";
         UIManager.displayIndicator(card);

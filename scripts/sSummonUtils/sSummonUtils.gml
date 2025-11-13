@@ -27,7 +27,7 @@ function specialSummonNamed(card, effect, context) {
     var targetName = variable_struct_exists(effect, "target_name") ? effect.target_name : "";
     var targetObjectName = variable_struct_exists(effect, "target_object") ? effect.target_object : "";
 
-    show_debug_message("### specialSummonNamed: owner=" + string(ownerIsHero) + ", targetName=" + string(targetName) + ", targetObject=" + string(targetObjectName));
+    // Debug global supprimé: conserver uniquement les logs liés aux artéfacts
 
     // Déterminer les sources autorisées (par défaut: Deck > Graveyard > Hand)
     var allowedSources = ["Deck", "Graveyard", "Hand"];
@@ -45,7 +45,6 @@ function specialSummonNamed(card, effect, context) {
 
     var found = findCard(ownerIsHero, criteria, allowedSources);
     if (found == noone) {
-        show_debug_message("### Effet: aucune source disponible pour " + string(targetName));
         return false;
     }
 
@@ -82,7 +81,6 @@ function specialSummonNamed(card, effect, context) {
             show_debug_message("### specialSummonNamed: graveyard fallback asset targetObject->index=" + string(objIndex));
         } else if (targetName != "") {
             objIndex = asset_get_index(targetName);
-            show_debug_message("### specialSummonNamed: graveyard fallback targetName->index=" + string(objIndex));
         }
         if (objIndex != noone) {
             cardToSummon = instance_create_layer(X, Y, layer_get_id("Instances"), objIndex);
@@ -91,7 +89,6 @@ function specialSummonNamed(card, effect, context) {
         var gidx = (found.data != noone && variable_struct_exists(found.data, "index")) ? found.data.index : -1;
         if (gidx != -1) { array_delete(graveyard.cards, gidx, 1); }
     } else {
-        show_debug_message("### specialSummonNamed: source non supportée: " + string(found.source));
         return false;
     }
 

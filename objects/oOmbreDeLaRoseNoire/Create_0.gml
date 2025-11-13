@@ -18,12 +18,10 @@ effects = [
         trigger: TRIGGER_ENTER_GRAVEYARD,
         effect_type: EFFECT_DRAW_CARDS,
         value: 2,
-        description: "Quand cette carte entre au cimetière : piochez 2 cartes."
-    },
-    {
-        trigger: TRIGGER_ENTER_GRAVEYARD,
-        effect_type: EFFECT_DISCARD,
-        selection: { mode: "random", count: 1 },
-        description: "Puis défaussez au hasard 1 carte de votre main."
+        
+        flow: [
+            { effect_type: EFFECT_TEMPO, ms: 1000 },
+            { effect_type: EFFECT_DISCARD, selection: { mode: "random", count: 1 }, description: "Puis défaussez au hasard 1 carte de votre main." }
+        ]
     }
 ];

@@ -37,13 +37,10 @@ effects[2] = {
         archetype: "Rose noire"
     },
     destination: "Deck", // Ajoute au deck
-    shuffle_deck: true
-};
-
-// Effet Tombe 2: Piocher 1 carte après avoir renvoyé les cartes au deck
-effects[3] = {
-    trigger: TRIGGER_ON_DESTROY,
-    effect_type: EFFECT_DRAW_CARDS,
-    value: 1
+    shuffle_deck: true,
+    flow: [
+        { effect_type: EFFECT_TEMPO, ms: 1000 },
+        { effect_type: EFFECT_DRAW_CARDS, value: 1 }
+    ]
 };
 

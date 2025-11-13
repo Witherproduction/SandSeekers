@@ -32,9 +32,9 @@ function load_player_deck_from_data(deck_data, deck_list) {
         } else if (is_string(card_data)) {
             // Format simple (ancien format)
             card_name = card_data;
-            show_debug_message("### Using simple card name: " + card_name);
+            // Debug global supprimé
         } else {
-            show_debug_message("### Error: Invalid card data type at index " + string(i));
+            // Debug global supprimé
             continue;
         }
         

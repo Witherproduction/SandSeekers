@@ -24,10 +24,12 @@ array_push(effects, {
         zone: "Field",
         owner_turn: true,
         once_per_turn: true,
-        has_enemy_spell_on_field: true
+        has_enemy_spell_on_field: true,
+        min_hand_size: 1
     },
     // Enchaînement: si la défausse réussit, détruire une carte Magie ennemie
     flow: [
+        { effect_type: EFFECT_TEMPO, ms: 1000 },
         {
             effect_type: EFFECT_DESTROY,
             owner: "enemy",
@@ -37,5 +39,5 @@ array_push(effects, {
             destroy_count: 1
         }
     ],
-    description: "Finalisation : défaussez 1 carte; puis détruisez 1 carte Magie adverse sur le terrain."
+   
 });

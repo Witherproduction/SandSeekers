@@ -19,7 +19,6 @@ effects = [
         trigger: TRIGGER_MAIN_PHASE,
         effect_type: EFFECT_SUMMON,
     summon_mode: "self",
-        description: "Invocation spéciale depuis la main si vous contrôlez une 'Rose noire'.",
         conditions: {
             owner: "Hero",
             zone: "Hand",

@@ -78,8 +78,11 @@ if (variable_instance_exists(id, "position_anim_active") && position_anim_active
                 image_angle = target_angle;
                 if (variable_instance_exists(id, "target_orientation")) orientation = target_orientation;
                 // Renforcer la synchro finale
-                image_index = 0;
-                if (variable_instance_exists(id, "isFaceDown")) isFaceDown = false;
+                if (variable_instance_exists(id, "isFaceDown") && isFaceDown) {
+                    image_index = 1;
+                } else {
+                    image_index = 0;
+                }
                 orientationChangedThisTurn = true;
                 position_anim_active = false;
                 anim_init_rotate = false;

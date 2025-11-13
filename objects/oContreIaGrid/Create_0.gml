@@ -10,8 +10,8 @@ total_cells = grid_cols * grid_rows; // 30 emplacements
 selected_bot = -1; // -1 = aucune sélection, 0 = aléatoire, 1-29 = bot spécifique
 available_bots = []; // Liste des bots disponibles
 
-// Limiter les bots disponibles à bot1–bot4 uniquement
-for (var i = 1; i <= 4; i++) {
+// Rendre disponibles les bots 1 à 5 (incluant Maître du Contrôle)
+for (var i = 1; i <= 5; i++) {
     array_push(available_bots, i);
 }
 

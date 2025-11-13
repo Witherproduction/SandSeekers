@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sAILogs",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sAILogs",
+  "parent":{
+    "name":"IA",
+    "path":"folders/Scripts/IA.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

@@ -147,6 +147,106 @@ function AI_EvaluateEffectNetGain(card, effect, target) {
             net = (targetIsHero ? +val : -val);
             break;
         }
+        // Destruction non ciblée (ex. « Sacrifice pour la meute »):
+        // évalue la perte attendue côté IA et le gain attendu côté ennemi selon les critères.
+        case EFFECT_DESTROY: {
+            // Helper pour récupérer les candidats selon owner/criteria
+            var sumValues = 0;
+            var countValues = 0;
+            var destroyCount = 1;
+            var randomSelect = false;
+            var ownerSide = "enemy"; // par défaut on considère que la cible est côté héros
+            var criteriaType = "";
+            var criteriaGenre = "";
+
+            if (variable_struct_exists(effect, "destroy_count")) destroyCount = max(1, effect.destroy_count);
+            if (variable_struct_exists(effect, "random_select")) randomSelect = effect.random_select;
+            if (variable_struct_exists(effect, "owner")) ownerSide = string_lower(effect.owner);
+            if (variable_struct_exists(effect, "criteria")) {
+                var crit = effect.criteria;
+                if (is_struct(crit)) {
+                    criteriaType = (variable_struct_exists(crit, "type") ? string_lower(crit.type) : "");
+                    criteriaGenre = (variable_struct_exists(crit, "genre") ? string(crit.genre) : "");
+                }
+            }
+
+            // Sélectionne le plateau côté IA (ally) ou héros (enemy)
+            var listCards = [];
+            var isAlly = (ownerSide == "ally");
+            var fieldList = isAlly ? fieldMonsterEnemy.cards : fieldMonsterHero.cards;
+            for (var i = 0; i < array_length(fieldList); i++) {
+                var cnd = fieldList[i];
+                if (cnd != 0 && instance_exists(cnd)) {
+                    // Filtre par type
+                    if (criteriaType != "" && variable_instance_exists(cnd, "type")) {
+                        if (string_lower(cnd.type) != criteriaType) continue;
+                    }
+                    // Filtre par genre
+                    if (criteriaGenre != "" && variable_instance_exists(cnd, "genre")) {
+                        if (string(cnd.genre) != criteriaGenre) continue;
+                    }
+                    array_push(listCards, cnd);
+                }
+            }
+
+            var availableCount = array_length(listCards);
+            if (availableCount <= 0) {
+                // Aucun candidat: effet sans impact
+                net += 0;
+            } else {
+                // Valeur attendue: approximation par moyenne des forces disponibles
+                for (var j = 0; j < availableCount; j++) {
+                    sumValues += AI_EstimateCardStrength(listCards[j]);
+                    countValues++;
+                }
+                var avgVal = (countValues > 0) ? (sumValues / countValues) : 0;
+                var expectedCount = min(destroyCount, availableCount);
+                var expectedImpact = avgVal * expectedCount;
+                // Détruire côté ally => coût (perte IA). Côté enemy => bénéfice.
+                net += isAlly ? -(expectedImpact) : +(expectedImpact);
+            }
+
+            // Évalue un éventuel « flow » destructif enchaîné (ex.: détruire ensuite un monstre ennemi)
+            if (variable_struct_exists(effect, "flow") && is_struct(effect.flow)) {
+                var flow = effect.flow;
+                var flowType = (variable_struct_exists(flow, "effect_type") ? flow.effect_type : -1);
+                if (flowType == EFFECT_DESTROY) {
+                    var fDestroyCount = (variable_struct_exists(flow, "destroy_count") ? max(1, flow.destroy_count) : 1);
+                    var fOwnerSide = (variable_struct_exists(flow, "owner") ? string_lower(flow.owner) : "enemy");
+                    var fCriteriaType = "";
+                    var fCriteriaGenre = "";
+                    if (variable_struct_exists(flow, "criteria") && is_struct(flow.criteria)) {
+                        var fcrit = flow.criteria;
+                        fCriteriaType = (variable_struct_exists(fcrit, "type") ? string_lower(fcrit.type) : "");
+                        fCriteriaGenre = (variable_struct_exists(fcrit, "genre") ? string(fcrit.genre) : "");
+                    }
+                    var fList = [];
+                    var fIsAlly = (fOwnerSide == "ally");
+                    var fField = fIsAlly ? fieldMonsterEnemy.cards : fieldMonsterHero.cards;
+                    for (var fi = 0; fi < array_length(fField); fi++) {
+                        var fc = fField[fi];
+                        if (fc != 0 && instance_exists(fc)) {
+                            if (fCriteriaType != "" && variable_instance_exists(fc, "type")) {
+                                if (string_lower(fc.type) != fCriteriaType) continue;
+                            }
+                            if (fCriteriaGenre != "" && variable_instance_exists(fc, "genre")) {
+                                if (string(fc.genre) != fCriteriaGenre) continue;
+                            }
+                            array_push(fList, fc);
+                        }
+                    }
+                    var fAvail = array_length(fList);
+                    if (fAvail > 0) {
+                        var fSum = 0; var fCnt = 0;
+                        for (var fk = 0; fk < fAvail; fk++) { fSum += AI_EstimateCardStrength(fList[fk]); fCnt++; }
+                        var fAvg = (fCnt > 0) ? (fSum / fCnt) : 0;
+                        var fExpected = fAvg * min(fDestroyCount, fAvail);
+                        net += fIsAlly ? -(fExpected) : +(fExpected);
+                    }
+                }
+            }
+            break;
+        }
         case EFFECT_BANISH_TARGET: {
             var val2 = AI_EstimateCardStrength(target);
             net = (targetIsHero ? +floor(val2 * 1.2) : -floor(val2 * 1.2));
@@ -202,5 +302,90 @@ function AI_EvaluateEffectNetGain(card, effect, target) {
         }
     }
 
+    // Bonus contextuel pour privilégier les actions menant à la victoire
+    net += AI_SituationPriorityBonus(effect, target);
+
     return net;
+}
+
+/// Bonus contextuel de priorité selon la situation (LP, board, main)
+function AI_SituationPriorityBonus(effect, target) {
+    if (!is_struct(effect)) return 0;
+    var bonus = 0;
+    var eType = variable_struct_exists(effect, "effect_type") ? effect.effect_type : -1;
+
+    // Lecture LP et contexte
+    var enemyLP = (instance_exists(LP_Hero) && variable_instance_exists(LP_Hero, "nbLP")) ? LP_Hero.nbLP : 8000;
+    var ourLP   = (instance_exists(LP_Enemy) && variable_instance_exists(LP_Enemy, "nbLP")) ? LP_Enemy.nbLP : 8000;
+    var handCount = (ds_exists(handEnemy.cards, ds_type_list)) ? ds_list_size(handEnemy.cards) : 0;
+
+    // Évaluation du plateau
+    var sumOur = 0; var sumHero = 0;
+    for (var i = 0; i < 5; i++) {
+        var me = fieldMonsterEnemy.cards[i];
+        var he = fieldMonsterHero.cards[i];
+        if (me != 0 && instance_exists(me)) sumOur  += AI_EstimateCardStrength(me);
+        if (he != 0 && instance_exists(he)) sumHero += AI_EstimateCardStrength(he);
+    }
+    var boardDelta = sumOur - sumHero; // <0: on perd le board, >0: on mène
+
+    var targetIsHero = (target != noone && instance_exists(target) && variable_instance_exists(target, "isHeroOwner") && target.isHeroOwner);
+
+    switch (eType) {
+        case EFFECT_DAMAGE_TARGET: {
+            var amount = 0; if (variable_struct_exists(effect, "amount")) amount = effect.amount; else if (variable_struct_exists(effect, "damage")) amount = effect.damage; else amount = 300;
+            // Létal immédiat
+            if (targetIsHero && amount >= enemyLP) { bonus += 8000; }
+            // Sinon, favoriser les dégâts surtout si on domine le board
+            else if (targetIsHero) { bonus += floor(amount * (boardDelta >= 0 ? 1.5 : 1.0)); }
+            break;
+        }
+        case EFFECT_HEAL_TARGET: {
+            var amountH = 0; if (variable_struct_exists(effect, "amount")) amountH = effect.amount; else if (variable_struct_exists(effect, "heal")) amountH = effect.heal; else amountH = 300;
+            // Prioriser les soins si notre LP est bas
+            if (!targetIsHero) {
+                if (ourLP <= 2000) { bonus += amountH * 2 + max(0, 2000 - ourLP); }
+                else if (ourLP <= 4000) { bonus += floor(amountH * 1.0); }
+                else { bonus += floor(amountH * 0.25); }
+            }
+            break;
+        }
+        case EFFECT_DESTROY_TARGET: {
+            if (target != noone && instance_exists(target)) {
+                var val = AI_EstimateCardStrength(target);
+                // Favoriser le retrait de menaces, surtout si l’on perd le board
+                bonus += floor(val * (boardDelta < 0 ? 1.2 : 0.8));
+            }
+            break;
+        }
+        case EFFECT_BANISH_TARGET: {
+            if (target != noone && instance_exists(target)) {
+                var valB = AI_EstimateCardStrength(target);
+                bonus += floor(valB * (boardDelta < 0 ? 1.1 : 0.75));
+            }
+            break;
+        }
+        case EFFECT_RETURN_TO_HAND: {
+            if (target != noone && instance_exists(target)) {
+                var valR = AI_EstimateCardStrength(target);
+                bonus += floor(valR * (boardDelta < 0 ? 0.9 : 0.6));
+            }
+            break;
+        }
+        case EFFECT_DRAW_CARDS: {
+            var count = 1; if (variable_struct_exists(effect, "value")) count = max(1, effect.value);
+            // Main pauvre ou board désavantage → piocher est plus précieux
+            if (handCount <= 2) bonus += 400 * count;
+            if (boardDelta < 0) bonus += 200 * count;
+            break;
+        }
+        default: {
+            // Pas de bonus pour les autres effets par défaut
+            break;
+        }
+    }
+
+    // Ajustements globaux légers
+    if (boardDelta < 0) { bonus = floor(bonus * 1.1); }
+    return bonus;
 }

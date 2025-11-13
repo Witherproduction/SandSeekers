@@ -11,6 +11,8 @@ rarity = "commun"
 booster = "Chemin perdu"
 lastTurnAttack = 0;
 is_player_card = true; // Définit explicitement cette carte comme appartenant au joueur
+// Marqueur de capacité: empoisonneur
+isPoisoner = true;
 description = "Empoisonneur."
 
 // Définition des effets via sTriggers/sEffects
@@ -34,5 +36,4 @@ array_push(effects, {
     target_types: ["Monster"],
     // Demande une animation poison avant la destruction différée
     visual_fx: "poison",
-    description: "Après combat : détruisez le monstre ciblé si encore en jeu."
 });

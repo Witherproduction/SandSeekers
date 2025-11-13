@@ -19,6 +19,7 @@ effects = [
         show_aura: true,
         description: "Pioche 2 cartes.",
         flow: [
+            { effect_type: EFFECT_TEMPO, ms: 1000 },
             {
                 id: 2,
                 effect_type: EFFECT_DISCARD,

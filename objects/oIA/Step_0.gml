@@ -22,6 +22,28 @@ if (iaNextPhasePending && iaDelayFrames <= 0) {
     exit; // ne pas enchaîner d'autres actions ce Step
 }
 
+// --- Dépiler séquentiellement les activations manuelles pendant la phase Summon ---
+if (global.current_phase == "Summon" && manualEffectProcessing) {
+    // Respecter délai configurable entre activations
+    if (iaDelayFrames > 0) { exit; }
+
+    // Exécuter une seule action puis réactiver le délai
+    var qlen = array_length(manualEffectsQueue);
+    if (qlen > 0) {
+        var action = manualEffectsQueue[0];
+        manualEffectsQueue = array_delete(manualEffectsQueue, 0, 1);
+        AI_ActionExec_Perform(action);
+        iaDelayFrames = delay_cfg; // attendre avant la prochaine activation
+        exit;
+    } else {
+        // File vidée: terminer le traitement et planifier la transition
+        manualEffectProcessing = false;
+        iaNextPhasePending = true;
+        iaDelayFrames = delay_cfg;
+        exit;
+    }
+}
+
 // --- Séquencement d'attaque uniquement pendant la phase Attack ---
 if (global.current_phase == "Attack" && attackProcessing) {
     // Délai configurable entre attaques

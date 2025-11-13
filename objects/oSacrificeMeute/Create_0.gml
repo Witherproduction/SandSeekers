@@ -28,14 +28,15 @@ effects[0] = {
     destroy_count: 1,
     random_select: true,
     description: "Détruit une bête alliée aléatoire",
-    flow: {
-        effect_type: EFFECT_DESTROY,
-        owner: "enemy",
-        criteria: {
-            type: "Monster"
-        },
-        destroy_count: 1,
-        random_select: true,
-        description: "puis détruit un monstre ennemi aléatoire"
-    }
+    flow: [
+        { effect_type: EFFECT_TEMPO, ms: 1000 },
+        {
+            effect_type: EFFECT_DESTROY,
+            owner: "enemy",
+            criteria: { type: "Monster" },
+            destroy_count: 1,
+            random_select: true,
+            description: "puis détruit un monstre ennemi aléatoire"
+        }
+    ]
 };

@@ -71,6 +71,27 @@ destroyTargetingArrow = function() {
     }
 }
 
+// Affiche une flèche d'équipement depuis l'artéfact vers son monstre ciblé
+showEquipLinkArrowFor = function(artifactCard) {
+    if (!instance_exists(artifactCard)) return;
+    // Vérifier qu'il s'agit bien d'un Artéfact et qu'une cible est reliée
+    var isArtifact = (variable_instance_exists(artifactCard, "genre") && string_lower(artifactCard.genre) == string_lower("Artéfact"));
+    var tgt = (variable_instance_exists(artifactCard, "equipped_target")) ? artifactCard.equipped_target : noone;
+    if (isArtifact && tgt != noone && instance_exists(tgt)) {
+        // Créer une flèche dédiée qui pointe vers la cible fixe
+        if (targetingArrow != noone) {
+            instance_destroy(targetingArrow);
+        }
+        targetingArrow = instance_create_layer(0, 0, "Instances", oTargetingArrow);
+        targetingArrow.setSourceCard(artifactCard);
+        targetingArrow.setFixedTarget(tgt);
+        show_debug_message("### Flèche d'équipement affichée: " + string(artifactCard.name) + " -> " + string(tgt.name));
+    } else {
+        // Nettoyer si pas de cible
+        destroyTargetingArrow();
+    }
+}
+
 // Enlève la sélection
 remove = function() {
     show_debug_message("### selectManager.remove");
@@ -122,6 +143,12 @@ trySelect = function(card) {
                     newPreview.selected = card;
                     newPreview.depth = -100000;
                 }
+                // Afficher la flèche d'équipement en mode viewer-only si applicable
+                if (card.type == "Magic" && variable_instance_exists(card, "genre") && string_lower(card.genre) == string_lower("Artéfact")) {
+                    showEquipLinkArrowFor(card);
+                } else {
+                    destroyTargetingArrow();
+                }
                 // Afficher le bouton effet même en mode viewer-only si carte FD héros sur terrain
                 if (card.isHeroOwner && card.isFaceDown && (card.zone == "Field" || card.zone == "FieldSelected")) {
                     UIManager.displayEffectButton(card);
@@ -139,6 +166,12 @@ trySelect = function(card) {
                     var newPreviewEnemy = instance_create_layer(150, 250, "Instances", oSelectedCardDisplay);
                     newPreviewEnemy.selected = card;
                     newPreviewEnemy.depth = -100000;
+                }
+                // Afficher la flèche d'équipement en mode viewer-only si applicable
+                if (card.type == "Magic" && variable_instance_exists(card, "genre") && string_lower(card.genre) == string_lower("Artéfact")) {
+                    showEquipLinkArrowFor(card);
+                } else {
+                    destroyTargetingArrow();
                 }
                 return true;
             }
@@ -342,6 +375,13 @@ select = function(card) {
         // NEW: Afficher le bouton effet pour les cartes visibles du héros sur le terrain
         if(card.isHeroOwner && !card.isFaceDown && game.player[game.player_current] == "Hero") {
             UIManager.displayEffectButton(card);
+        }
+        // Indicateur visuel: si carte Artéfact équipée, afficher la flèche vers sa cible
+        if (card.type == "Magic" && variable_instance_exists(card, "genre") && string_lower(card.genre) == string_lower("Artéfact")) {
+            showEquipLinkArrowFor(card);
+        } else {
+            // Pas un artéfact: s'assurer qu'on n'affiche pas une flèche d'équipement résiduelle
+            destroyTargetingArrow();
         }
     } else if(card.zone == "Hand") {
         card.zone = "HandSelected";

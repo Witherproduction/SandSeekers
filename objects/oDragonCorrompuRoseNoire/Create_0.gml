@@ -21,6 +21,5 @@ effects = [
         target_object: "oDragonSacreRoseNoire",
         from_deck_only: true,
         conditions: { opponent_turn: true },
-        description: "À la destruction (tour adverse) : Invoquez spécialement un Dragon sacré par la Rose noire depuis votre deck."
     }
 ];

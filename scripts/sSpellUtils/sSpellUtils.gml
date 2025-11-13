@@ -20,6 +20,11 @@ function consumeSpellIfNeeded(card, effect) {
     var isDirect = (variable_instance_exists(card, "genre") && string_lower(card.genre) == "direct");
     if (!isDirect) return false;
 
+    if (variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending) {
+        card._consume_after_flow = true;
+        return false;
+    }
+
     // Déterminer les instances utiles
     var ownerIsHero = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
     var gyInst = ownerIsHero ? graveyardHero : graveyardEnemy;

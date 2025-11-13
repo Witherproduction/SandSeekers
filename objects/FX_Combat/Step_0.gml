@@ -339,12 +339,14 @@ else if (phase == "resolve") {
                     with (dm) resolveAttackDirectEnemy(other.attacker);
                 } else {
                     // Fallback: résolution directe ennemie locale si la méthode n'existe pas
-                    var effAtkEnemy = (variable_struct_exists(other.attacker, "effective_attack") ? other.attacker.effective_attack : other.attacker.attack);
-                    registerTriggerEvent(TRIGGER_ON_ATTACK, other.attacker, { attacker: other.attacker, defender: noone, direct_attack: true });
-                    if (!is_undefined(activateSecretsOnDirectAttack)) activateSecretsOnDirectAttack(other.attacker);
-                    var LP_Hero_Instance = instance_find(LP_Hero, 0);
-                    if (LP_Hero_Instance != noone) LP_Hero_Instance.nbLP -= effAtkEnemy;
-                    if (instance_exists(other.attacker)) { other.attacker.attacksUsedThisTurn = (variable_instance_exists(other.attacker, "attacksUsedThisTurn") ? other.attacker.attacksUsedThisTurn : 0) + 1; other.attacker.lastTurnAttack = game.nbTurn; }
+                    if (variable_instance_exists(self, "attacker") && attacker != noone && instance_exists(attacker)) {
+                        var effAtkEnemy = (variable_struct_exists(other.attacker, "effective_attack") ? other.attacker.effective_attack : other.attacker.attack);
+                        registerTriggerEvent(TRIGGER_ON_ATTACK, other.attacker, { attacker: other.attacker, defender: noone, direct_attack: true });
+                        if (!is_undefined(activateSecretsOnDirectAttack)) activateSecretsOnDirectAttack(other.attacker);
+                        var LP_Hero_Instance = instance_find(LP_Hero, 0);
+                        if (LP_Hero_Instance != noone) LP_Hero_Instance.nbLP -= effAtkEnemy;
+                        if (instance_exists(other.attacker)) { other.attacker.attacksUsedThisTurn = (variable_instance_exists(other.attacker, "attacksUsedThisTurn") ? other.attacker.attacksUsedThisTurn : 0) + 1; other.attacker.lastTurnAttack = game.nbTurn; }
+                    }
                 }
             }
         }

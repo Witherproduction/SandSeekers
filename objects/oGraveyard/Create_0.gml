@@ -37,9 +37,11 @@ addToGraveyard = function(card, suppress_triggers = false) {
 
         // Déclenchements associés au cimetière sauf si suppression demandée
         if (!suppress_triggers) {
-            registerTriggerEvent(TRIGGER_ENTER_GRAVEYARD, card, { to_graveyard: self, owner_is_hero: isHeroOwner, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false) });
-            // Événement global: un monstre est envoyé au cimetière (inclut la cible dans le contexte)
-            registerTriggerEvent(TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD, card, { target: card, to_graveyard: self, owner_is_hero: isHeroOwner, suppress_fx_aura: true, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false) });
+            var sac_for = (variable_global_exists("sacrifice_for_card") && instance_exists(global.sacrifice_for_card)) ? global.sacrifice_for_card : noone;
+            var ctxBase = { to_graveyard: self, owner_is_hero: isHeroOwner, from_sacrifice: (variable_global_exists("sacrifice_in_progress") ? global.sacrifice_in_progress : false), from_discard: (variable_global_exists("discard_in_progress") ? global.discard_in_progress : false), sacrifice_for: sac_for };
+            registerTriggerEvent(TRIGGER_ENTER_GRAVEYARD, card, ctxBase);
+            var ctxMonster = { target: card, to_graveyard: self, owner_is_hero: isHeroOwner, suppress_fx_aura: true, from_sacrifice: ctxBase.from_sacrifice, from_discard: ctxBase.from_discard, sacrifice_for: sac_for };
+            registerTriggerEvent(TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD, card, ctxMonster);
         }
     }
 };

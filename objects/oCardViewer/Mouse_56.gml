@@ -100,7 +100,11 @@ var my = device_mouse_y_to_gui(0);
 if (instance_exists(oCollectionCardDisplay) && 
     oCollectionCardDisplay.selectedCard != noone && 
     instance_exists(oCollectionCardDisplay.selectedCard)) {
-    
+    // IMPORTANT: la carte affichée est dessinée dans le repère "monde" (Draw normal),
+    // donc on utilise les coordonnées souris du monde pour les zones cliquables ici
+    var mx_world = mouse_x;
+    var my_world = mouse_y;
+
     var viewer_x = oCollectionCardDisplay.x;
     var viewer_y = oCollectionCardDisplay.y;
     var display_scale = 0.6;
@@ -127,21 +131,74 @@ if (instance_exists(oCollectionCardDisplay) &&
     var star_x2 = frames_x + 20;
     var star_y2 = frames_start_y + spacing * 2 + 20;
 
-    if (mx >= plus_x1 && mx <= plus_x2 && my >= plus_y1 && my <= plus_y2) {
-        with (oCollectionCardDisplay) {
-            add_selected_card_to_deck();
+    if (mx_world >= plus_x1 && mx_world <= plus_x2 && my_world >= plus_y1 && my_world <= plus_y2) {
+        var displayObj = instance_find(oCollectionCardDisplay, 0);
+        if (displayObj != noone && instance_exists(displayObj)) {
+            var sel = displayObj.selectedCard;
+            if (sel != noone && instance_exists(sel)) {
+                var cardName = variable_instance_exists(sel, "name") ? sel.name : "";
+                if (cardName != "") {
+                    if (!instance_exists(oDeckBuilder)) {
+                        var builder_x = room_width - 400;
+                        var builder_y = 100;
+                        instance_create_layer(builder_x, builder_y, "Instances", oDeckBuilder);
+                    }
+                    with (oDeckBuilder) {
+                        if (!is_array(cards_list)) { cards_list = []; }
+                        array_push(cards_list, cardName);
+                        if (!is_undefined(check_and_add_slot)) check_and_add_slot();
+                    }
+                }
+            }
         }
         exit;
     }
-    if (mx >= minus_x1 && mx <= minus_x2 && my >= minus_y1 && my <= minus_y2) {
-        with (oCollectionCardDisplay) {
-            remove_selected_card_from_deck();
+    if (mx_world >= minus_x1 && mx_world <= minus_x2 && my_world >= minus_y1 && my_world <= minus_y2) {
+        var displayObj2 = instance_find(oCollectionCardDisplay, 0);
+        if (displayObj2 != noone && instance_exists(displayObj2)) {
+            var sel2 = displayObj2.selectedCard;
+            if (sel2 != noone && instance_exists(sel2)) {
+                var cardName2 = variable_instance_exists(sel2, "name") ? sel2.name : "";
+                if (cardName2 != "" && instance_exists(oDeckBuilder)) {
+                    with (oDeckBuilder) {
+                        if (!is_array(cards_list)) { cards_list = []; }
+                        for (var i = 0; i < array_length(cards_list); i++) {
+                            var entry = cards_list[i];
+                            var entry_name = is_struct(entry) && variable_struct_exists(entry, "name") ? entry.name : string(entry);
+                            if (entry_name == cardName2) {
+                                array_delete(cards_list, i, 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
         exit;
     }
-    if (mx >= star_x1 && mx <= star_x2 && my >= star_y1 && my <= star_y2) {
-        with (oCollectionCardDisplay) {
-            toggle_favorite_selected_card();
+    if (mx_world >= star_x1 && mx_world <= star_x2 && my_world >= star_y1 && my_world <= star_y2) {
+        var displayObj3 = instance_find(oCollectionCardDisplay, 0);
+        if (displayObj3 != noone && instance_exists(displayObj3)) {
+            var sel3 = displayObj3.selectedCard;
+            if (sel3 != noone && instance_exists(sel3)) {
+                var cardName3 = variable_instance_exists(sel3, "name") ? sel3.name : "";
+                if (cardName3 != "") {
+                    if (!variable_global_exists("favorite_cards") || !is_array(global.favorite_cards)) {
+                        global.favorite_cards = [];
+                    }
+                    var found = false;
+                    for (var f = 0; f < array_length(global.favorite_cards); f++) {
+                        if (global.favorite_cards[f] == cardName3) { found = true; break; }
+                    }
+                    if (found) {
+                        for (var r = 0; r < array_length(global.favorite_cards); r++) {
+                            if (global.favorite_cards[r] == cardName3) { array_delete(global.favorite_cards, r, 1); break; }
+                        }
+                    } else {
+                        array_push(global.favorite_cards, cardName3);
+                    }
+                }
+            }
         }
         exit;
     }

@@ -88,6 +88,29 @@ summon = function(card, XYPos, desiredOrientation = "") {
     var target_y = XYPos[1];
     var target_pos = XYPos[2];
 
+    // Vérification du terrain et réservation immédiate du slot pour éviter les empilements
+    var fieldMgrSummon = isHeroOwner ? fieldManagerHero : fieldManagerEnemy;
+    if (fieldMgrSummon == noone || !instance_exists(fieldMgrSummon)) {
+        show_debug_message("### oHand.summon - Erreur: fieldManager introuvable");
+        return false;
+    }
+    var fieldTarget = fieldMgrSummon.getField(card.type);
+    if (fieldTarget == noone || !instance_exists(fieldTarget) || !variable_struct_exists(fieldTarget, "cards")) {
+        show_debug_message("### oHand.summon - Erreur: champ introuvable pour type=" + string(card.type));
+        return false;
+    }
+    if (target_pos < 0 || target_pos >= array_length(fieldTarget.cards)) {
+        show_debug_message("### oHand.summon - Erreur: position cible hors limites: " + string(target_pos));
+        return false;
+    }
+    if (fieldTarget.cards[target_pos] != 0) {
+        show_debug_message("### oHand.summon - Slot déjà occupé, annulation de la pose");
+        return false;
+    }
+    // Réserver le slot tout de suite pour bloquer les poses simultanées sur la même case
+    card.fieldPosition = target_pos;
+    fieldMgrSummon.add(card);
+
     // Retire la carte de la main du joueur (immédiat pour libérer l'espace visuel)
     var idx = ds_list_find_index(cards, card);
     if (idx != -1) {
@@ -154,12 +177,15 @@ summon = function(card, XYPos, desiredOrientation = "") {
          fx.col_main            = make_color_rgb(255, 215, 0);
          fx.trace_thickness     = 2;
          fx.node_radius         = 4;
+        // Démarrage réussi: retourner true immédiatement
+        return true;
     } else {
         // Fallback en cas d'échec de création de l'effet: placement instantané
         card.x = target_x;
         card.y = target_y;
+        // Le slot a déjà été réservé ci-dessus; réaffectation prudente
         card.fieldPosition = target_pos;
-        (isHeroOwner ? fieldManagerHero : fieldManagerEnemy).add(card);
+        fieldMgrSummon.add(card);
 
         // Mise à l'échelle/zone
         card.image_xscale = 0.275;
@@ -224,7 +250,11 @@ summon = function(card, XYPos, desiredOrientation = "") {
                 registerTriggerEvent(TRIGGER_ON_MONSTER_SUMMON, card, ctxSummon);
             }
         }
+        // Fallback réussi: retourner true
+        return true;
     }
+    // Si on atteint ce point, considérer l'opération comme réussie
+    return true;
 }
 #endregion
 

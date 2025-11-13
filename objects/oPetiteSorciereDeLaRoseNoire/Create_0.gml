@@ -19,5 +19,5 @@ array_push(effects, {
     effect_type: EFFECT_SEARCH,
     search_criteria: { archetype: "Rose noire", type: "Monster" },
     random_select: true,
-    description: "Finalisation : ajoutez aléatoirement un monstre 'Rose noire' depuis votre deck à votre main."
+    
 });

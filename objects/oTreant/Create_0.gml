@@ -18,15 +18,16 @@ if (!variable_instance_exists(id, "effects")) effects = [];
 array_push(effects, {
     id: "treant_discard_destroy_spell",
     trigger: TRIGGER_START_TURN,
-    conditions: { has_enemy_spell_on_field: true },
+    conditions: { has_enemy_spell_on_field: true, min_hand_size: 1 },
     effect_type: EFFECT_DISCARD,
     selection: { mode: "count", count: 1 },
     flow: [
+        { effect_type: EFFECT_TEMPO, ms: 1000 },
         {
             effect_type: EFFECT_DESTROY,
             owner: "enemy",
             target_zone: "Field",
-            criteria: { type: "Magic" },
+            target_types: ["Magic"],
             random_select: true,
             destroy_count: 1
         }

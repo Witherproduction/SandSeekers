@@ -24,6 +24,6 @@ description = "Défenseur : détruisez le monstre attaquant";
                target_type: "Monster",
                opponent_turn: true
            },
-           description: "Après qu'un adversaire attaque: détruisez le monstre attaquant."
+           
        }
    ];

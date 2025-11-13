@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sAIAttackPlanner",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sAIAttackPlanner",
+  "parent":{
+    "name":"IA",
+    "path":"folders/Scripts/IA.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

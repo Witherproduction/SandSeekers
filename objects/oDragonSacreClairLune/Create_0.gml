@@ -20,13 +20,14 @@ effects = [
         trigger: TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD,
         effect_type: EFFECT_SUMMON,
         summon_mode: "self",
+        auto_select_leftmost: true,
         description: "Quand un Dragon est envoyé au cimetière : Invoquez spécialement cette carte depuis votre main.",
         conditions: {
             zone: "Hand",
             target_type: "Monster",
             target_genre: "Dragon",
-            // Ne pas s’activer si l’événement provient d’un sacrifice manuel
-            ignore_when_sacrifice: true
+            ignore_when_sacrifice: true,
+            ignore_when_discard: true
         }
     }
 ];

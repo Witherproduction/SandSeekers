@@ -4,8 +4,10 @@ function equipSelectTarget(card, effect, context) {
     if (card == noone || !instance_exists(card)) return false;
     var target = variable_struct_exists(context, "target") ? context.target : noone;
     if (target == noone || !instance_exists(target)) return false;
-    // Valider cible: monstre sur le terrain
-    if (!object_is_ancestor(target.object_index, oCardMonster)) {
+    // Valider cible: monstre sur le terrain (par héritage OU par type)
+    var isMonsterByAncestry = object_is_ancestor(target.object_index, oCardMonster);
+    var isMonsterByType = (variable_instance_exists(target, "type") && string_lower(target.type) == "monster");
+    if (!(isMonsterByAncestry || isMonsterByType)) {
         show_debug_message("### Equip: cible non-monstre refusée");
         return false;
     }
@@ -26,15 +28,16 @@ function equipSelectTarget(card, effect, context) {
     }
     // Restriction de genre (Humanoïde/Bête, etc.) si précisée sur l'effet
     if (variable_struct_exists(effect, "allowed_genres")) {
-        var targetGenre = variable_instance_exists(target, "genre") ? target.genre : "";
+        var targetGenre = string_lower(variable_instance_exists(target, "genre") ? target.genre : "");
         var genreOk = false;
         var gWanted = effect.allowed_genres;
         if (is_array(gWanted)) {
             for (var gi = 0; gi < array_length(gWanted); gi++) {
-                if (targetGenre == gWanted[gi]) { genreOk = true; break; }
+                var wanted = string_lower(gWanted[gi]);
+                if (targetGenre == wanted) { genreOk = true; break; }
             }
         } else if (is_string(gWanted)) {
-            genreOk = (targetGenre == gWanted);
+            genreOk = (targetGenre == string_lower(gWanted));
         }
         if (!genreOk) {
             show_debug_message("### Equip: genre refusé pour cible=" + string(targetGenre));
@@ -58,6 +61,13 @@ function equipSelectTarget(card, effect, context) {
         var ctxEquip = { summon_mode: "Summon", owner_is_hero: ownerIsHero };
         registerTriggerEvent(TRIGGER_ON_SUMMON, card, ctxEquip);
         registerTriggerEvent(TRIGGER_ON_SPELL_CAST, card, ctxEquip);
+        // Tolérance: certaines implémentations de oHand.summon ne retournent pas explicitement un booléen.
+        // Considérer la pose réussie si la carte est bien passée en zone Field après l'appel.
+        if (!summonedOK) {
+            if (variable_instance_exists(card, "zone") && card.zone == "Field") {
+                summonedOK = true;
+            }
+        }
         if (!summonedOK) { return false; }
     }
     // Lier la cible
@@ -65,6 +75,18 @@ function equipSelectTarget(card, effect, context) {
     // Fin du ciblage en cours pour cet équipement
     if (variable_instance_exists(card, "equip_pending")) card.equip_pending = false;
     show_debug_message("### Equip: " + string(card.name) + " -> cible=" + string(target.name));
+
+    // Appliquer immédiatement le buff d'équipement si un effet correspondant est présent,
+    // afin d'éviter d'attendre le cycle d'effets continus du Step.
+    if (variable_instance_exists(card, "effects") && is_array(card.effects)) {
+        for (var bi = 0; bi < array_length(card.effects); bi++) {
+            var beff = card.effects[bi];
+            if (is_struct(beff) && variable_struct_exists(beff, "effect_type") && beff.effect_type == EFFECT_EQUIP_APPLY_BUFF) {
+                executeEffect(card, beff, {});
+                break;
+            }
+        }
+    }
     return true;
 }
 
@@ -123,6 +145,7 @@ function equipApplyBuff(card, effect, context) {
     }
     buffSetContribution(t, srcKey, atkBuff, defBuff);
     buffRecompute(t);
+    show_debug_message("### Equip: buff appliqué par '" + string(card.name) + "' sur '" + string(variable_instance_exists(t, "name") ? t.name : object_get_name(t.object_index)) + "' (" + string(atkBuff) + "/" + string(defBuff) + ")");
     return true;
 }
 

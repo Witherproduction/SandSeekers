@@ -19,7 +19,7 @@ effects = [
         secret_activation: { direct_attack: true },
         use_attacker_attack_as_value: true,
         affect_opponent_lp: true,
-        description: "Secret: sur attaque directe adverse, inflige des dégâts égaux à l'ATK de l'attaquant."
+       
     }
 ];
 

@@ -415,9 +415,33 @@ function checkTriggerConditions(card, effect, context) {
         // Vérifier la présence d'un sort ennemi sur le terrain
         if (variable_struct_exists(conditions, "has_enemy_spell_on_field") && conditions.has_enemy_spell_on_field) {
             var ownerIsHero_es = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
+            // Si conditions.owner spécifie explicitement Hero/Enemy, l'utiliser pour déterminer le côté propriétaire
+            if (variable_struct_exists(conditions, "owner")) {
+                var ow_es = string_lower(conditions.owner);
+                if (ow_es == "hero") ownerIsHero_es = true; else if (ow_es == "enemy") ownerIsHero_es = false;
+            }
             if (!hasEnemySpellOnField(ownerIsHero_es)) {
                 return false;
             }
+        }
+
+        // Vérifier la présence minimale de cartes en main du bon propriétaire
+        // Supporte deux formes: conditions.has_card_in_hand (bool) et conditions.min_hand_size (nombre)
+        var requireHandCheck = (variable_struct_exists(conditions, "has_card_in_hand") && conditions.has_card_in_hand)
+                               || variable_struct_exists(conditions, "min_hand_size");
+        if (requireHandCheck) {
+            var ownerIsHero_hand = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
+            // Si conditions.owner est défini, prendre ce côté comme référence
+            if (variable_struct_exists(conditions, "owner")) {
+                var ow_hand = string_lower(conditions.owner);
+                if (ow_hand == "hero") ownerIsHero_hand = true; else if (ow_hand == "enemy") ownerIsHero_hand = false;
+            }
+            var handInstCheck = ownerIsHero_hand ? handHero : handEnemy;
+            if (!instance_exists(handInstCheck)) { return false; }
+            var handSize = 0;
+            if (is_array(handInstCheck.cards)) handSize = array_length(handInstCheck.cards); else handSize = ds_list_size(handInstCheck.cards);
+            var minReq = variable_struct_exists(conditions, "min_hand_size") ? conditions.min_hand_size : 1;
+            if (handSize < minReq) { return false; }
         }
 
         // Condition sur le mode d'invocation (ex: "Summon" vs "SpecialSummon").
@@ -448,10 +472,21 @@ function checkTriggerConditions(card, effect, context) {
         && variable_struct_exists(effect.conditions, "ignore_when_sacrifice")
         && effect.conditions.ignore_when_sacrifice) {
         if (variable_struct_exists(context, "from_sacrifice") && context.from_sacrifice) {
-            return false;
+            var sacfor = variable_struct_exists(context, "sacrifice_for") ? context.sacrifice_for : noone;
+            if (sacfor != noone && sacfor == card) {
+                return false;
+            }
         }
-        if (variable_global_exists("sacrifice_in_progress") && global.sacrifice_in_progress) {
-            return false;
+    }
+
+    if (variable_struct_exists(effect, "conditions")
+        && variable_struct_exists(effect.conditions, "ignore_when_discard")
+        && effect.conditions.ignore_when_discard) {
+        if (variable_struct_exists(context, "from_discard") && context.from_discard) {
+            var tgt2 = variable_struct_exists(context, "target") ? context.target : noone;
+            if (tgt2 != noone && tgt2 == card) {
+                return false;
+            }
         }
     }
 
@@ -574,11 +609,10 @@ function getAvailableEffect(card) {
 function activateTrigger(card, triggerType, context = {}) {
     // Garde d'existence: ignorer si la carte est manquante ou détruite
     if (card == noone || !instance_exists(card)) {
-        show_debug_message("### activateTrigger: card missing/destroyed, skipping for trigger " + string(triggerType));
         return;
     }
     var cardName = variable_instance_exists(card, "name") ? card.name : "unknown";
-    show_debug_message("### activateTrigger called for card: " + cardName + " with trigger: " + string(triggerType));
+    
 
     if (!variable_struct_exists(card, "effects")) return;
 
@@ -594,9 +628,9 @@ function activateTrigger(card, triggerType, context = {}) {
 
         if (variable_struct_exists(effect, "trigger") && effect.trigger == triggerType) {
             var effectTypeStr = variable_struct_exists(effect, "effect_type") ? string(effect.effect_type) : "unknown";
-            show_debug_message("### Found matching trigger for effect: " + effectTypeStr);
+            // show_debug_message("### Found matching trigger for effect: " + effectTypeStr);
             if (checkTriggerConditions(card, effect, context)) {
-                show_debug_message("### Conditions passed, executing effect");
+                // show_debug_message("### Conditions passed, executing effect");
 
                 // Marquer l'effet comme utilisé sera fait après exécution réussie
 
@@ -608,7 +642,7 @@ function activateTrigger(card, triggerType, context = {}) {
 
                 var etype = variable_struct_exists(effect, "effect_type") ? effect.effect_type : "(none)";
 
-                show_debug_message("### activateTrigger: " + string(triggerType) + " on " + cname + " effect=" + string(etype));
+                // show_debug_message("### activateTrigger: " + string(triggerType) + " on " + cname + " effect=" + string(etype));
 
                 
 
@@ -791,19 +825,7 @@ function getHandSize() {
 /// @param {struct} context - Le contexte de l'événement
 
 function registerTriggerEvent(triggerType, sourceCard = noone, context = {}) {
-
-    // Log de debug sur l'événement
-
-    var srcName = "none";
-    if (sourceCard != noone && instance_exists(sourceCard)) {
-        if (instance_exists(sourceCard)) {
-            srcName = variable_instance_exists(sourceCard, "name") ? sourceCard.name : object_get_name(sourceCard.object_index);
-        } else {
-            srcName = "destroyed";
-        }
-    }
-
-    show_debug_message("### registerTriggerEvent: trigger=" + string(triggerType) + " source=" + srcName);
+    // Debug global supprimé: garder la console focalisée sur les artéfacts
 
     // Source sûre (sourceCard valide ou carte détruite fournie dans le contexte)
     var srcCardSafe = noone;
@@ -829,11 +851,27 @@ function registerTriggerEvent(triggerType, sourceCard = noone, context = {}) {
 
         }
 
+        // Protection artefacts: au moment du placement/cast, marquer l'équipement comme en ciblage
+        if (srcCardSafe != noone && instance_exists(srcCardSafe)) {
+            var isArtifact = (variable_instance_exists(srcCardSafe, "genre") && string_lower(srcCardSafe.genre) == string_lower("Artéfact"));
+            var hasEquipSelect = false;
+            if (isArtifact && variable_instance_exists(srcCardSafe, "effects") && is_array(srcCardSafe.effects)) {
+                for (var ei = 0; ei < array_length(srcCardSafe.effects); ei++) {
+                    var effi = srcCardSafe.effects[ei];
+                    if (is_struct(effi) && variable_struct_exists(effi, "effect_type") && effi.effect_type == EFFECT_EQUIP_SELECT_TARGET) { hasEquipSelect = true; break; }
+                }
+            }
+            if (hasEquipSelect) {
+                if (!variable_instance_exists(srcCardSafe, "equip_pending")) srcCardSafe.equip_pending = false;
+                // Si pas encore équipée à une cible, empêcher le cleanup destructif
+                if (!variable_instance_exists(srcCardSafe, "equipped_target") || srcCardSafe.equipped_target == noone) {
+                    srcCardSafe.equip_pending = true;
+                }
+            }
+        }
         // Si la carte source est face cachée, ne pas déclencher certains triggers immédiats
         var isFD = (variable_instance_exists(srcCardSafe, "isFaceDown") && srcCardSafe.isFaceDown);
-        if (isFD && (triggerType == TRIGGER_ENTER_FIELD || triggerType == TRIGGER_ON_SUMMON)) {
-            show_debug_message("### registerTriggerEvent: skip " + string(triggerType) + " on facedown card " + srcName);
-        } else {
+        if (!(isFD && (triggerType == TRIGGER_ENTER_FIELD || triggerType == TRIGGER_ON_SUMMON))) {
             // Déclenche l'effet sur la carte source même si elle quitte le terrain
             activateTrigger(srcCardSafe, triggerType, context);
         }
@@ -912,17 +950,8 @@ function registerTriggerEvent(triggerType, sourceCard = noone, context = {}) {
 
     // Diffuser aux cartes en main pour les triggers globaux pertinents
     if (triggerType == TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD) {
-        show_debug_message("### Broadcasting TRIGGER_ON_MONSTER_SENT_TO_GRAVEYARD to hand cards");
-        if (variable_struct_exists(context, "target")) {
-            var targetCard = context.target;
-            var targetName = variable_instance_exists(targetCard, "name") ? targetCard.name : "unknown";
-            var targetGenre = variable_instance_exists(targetCard, "genre") ? targetCard.genre : "unknown";
-            show_debug_message("### Target card: " + targetName + " (genre: " + targetGenre + ")");
-        }
         with (oCardMonster) {
             if (zone == "Hand" || zone == "HandSelected") {
-                var cardName = variable_instance_exists(self, "name") ? self.name : "unknown";
-                show_debug_message("### Checking hand card: " + cardName);
                 activateTrigger(self, triggerType, context);
             }
         }

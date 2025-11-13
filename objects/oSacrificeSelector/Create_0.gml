@@ -158,7 +158,9 @@ confirm = function() {
     // Validation: vérifier qu'on a le bon nombre de sacrifices
     if(array_length(selectedSacrifices) == requiredSacrificeCount) {
         // Effectue les sacrifices
+        global.sacrifice_for_card = monsterToSummon;
         performSacrifices(selectedSacrifices, true); // true = isHeroOwner
+        global.sacrifice_for_card = noone;
         
         // Maintenant afficher les indicateurs de position pour l'invocation
         UIManager.displayIndicator(monsterToSummon);
@@ -188,6 +190,7 @@ completeSummon = function(position) {
         UIManager.selectedSummonOrSet = "";
         
         // Réinitialise les variables
+        if (variable_global_exists("sacrifice_for_card")) { global.sacrifice_for_card = noone; }
         monsterToSummon = noone;
         summonPosition = [];
         summonMode = "";

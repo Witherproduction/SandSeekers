@@ -28,6 +28,6 @@ effects = [
             zone: "Field",
             summon_mode: "Summon" // ne se déclenche pas sur l'invocation spéciale issue de cet effet
         },
-        description: "À l'invocation: invoquez spécialement un autre 'Loup béni par la Rose noire' depuis la main ou le deck."
+        
     }
 ];

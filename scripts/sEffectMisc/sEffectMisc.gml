@@ -12,15 +12,20 @@ function banishCard(card) {
 
 /// @function returnToHand(card)
 function returnToHand(card) {
-    if (card == noone || !instance_exists(oHand)) return false;
-    // Ajouter à la main
+    if (card == noone || !instance_exists(card) || !instance_exists(oHand)) return false;
+
+    var isOnField = (variable_instance_exists(card, "zone") && (card.zone == "Field" || card.zone == "FieldSelected"));
+    if (!isOnField) return false;
+
+    var fm = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner) ? fieldManagerHero : fieldManagerEnemy;
+    if (instance_exists(fm) && variable_instance_exists(card, "fieldPosition")) { fm.remove(card); }
+
     var h = noone; with (oHand) { if (variable_instance_exists(self, "isHeroOwner") && (isHeroOwner == card.isHeroOwner)) { h = id; break; } }
-    if (h != noone) {
-        h.addCard(card);
-        card.zone = "Hand";
-        return true;
-    }
-    return false;
+    if (h == noone) return false;
+
+    h.addCard(card);
+    card.zone = "Hand";
+    return true;
 }
 
 /// @function getTargetsByFilter(effect)
@@ -379,12 +384,24 @@ function applyGraveyardGenreBoost(card, effect) {
 }
 
 /// @function hasEnemySpellOnField(ownerIsHero)
+/// @description Vérifie s'il existe au moins une carte de type Magic sur le terrain adverse
 function hasEnemySpellOnField(ownerIsHero) {
     var found = false;
-    with (oCardMagic) {
-        if (zone == "Field" && variable_instance_exists(self, "isHeroOwner") && (isHeroOwner != ownerIsHero)) {
-            found = true;
-        }
+    // Parcourir toutes les cartes parents pour couvrir les objets enfants de oCardMagic
+    with (oCardParent) {
+        if (!instance_exists(self)) continue;
+        if (!variable_instance_exists(self, "zone")) continue;
+        // Accepter "Field" et "FieldSelected" comme présents sur le terrain
+        var onField = (zone == "Field" || zone == "FieldSelected");
+        if (!onField) continue;
+        // Limiter aux cartes de type Magic
+        if (!variable_instance_exists(self, "type") || string_lower(self.type) != string_lower("Magic")) continue;
+        // S'assurer que l'allégeance est adverse par rapport au propriétaire de l'effet
+        if (!variable_instance_exists(self, "isHeroOwner")) continue;
+        if (self.isHeroOwner == ownerIsHero) continue;
+        found = true;
+        // Petite optimisation: sortir dès qu'on a trouvé
+        break;
     }
     return found;
 }
@@ -404,18 +421,31 @@ function destroyOneEnemySpell(ownerIsHero) {
 }
 
 /// @function destroyRandomEnemySpell(ownerIsHero)
+/// @description Détruit aléatoirement une carte de type Magic sur le terrain adverse
 function destroyRandomEnemySpell(ownerIsHero) {
     var candidates = [];
-    with (oCardMagic) {
-        if (zone == "Field" && variable_instance_exists(self, "isHeroOwner") && (isHeroOwner != ownerIsHero)) {
-            array_push(candidates, id);
-        }
+    // Parcourir toutes les cartes parents pour inclure les enfants de oCardMagic
+    with (oCardParent) {
+        if (!instance_exists(self)) continue;
+        if (!variable_instance_exists(self, "zone")) continue;
+        var onField = (zone == "Field" || zone == "FieldSelected");
+        if (!onField) continue;
+        if (!variable_instance_exists(self, "type") || string_lower(self.type) != string_lower("Magic")) continue;
+        if (!variable_instance_exists(self, "isHeroOwner")) continue;
+        if (self.isHeroOwner == ownerIsHero) continue;
+        array_push(candidates, id);
     }
     var n = array_length(candidates);
     if (n > 0) {
         var idx = irandom(n - 1);
-        return destroyCard(candidates[idx]);
+        var pick = candidates[idx];
+        var ok = destroyCard(pick);
+        if (!ok) {
+            show_debug_message("### destroyRandomEnemySpell: échec destruction sur id=" + string(pick));
+        }
+        return ok;
     }
+    show_debug_message("### destroyRandomEnemySpell: aucun sort adverse candidat à détruire");
     return false;
 }
 

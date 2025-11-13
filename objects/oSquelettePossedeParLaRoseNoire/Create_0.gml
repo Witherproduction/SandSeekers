@@ -23,5 +23,5 @@ array_push(effects, {
     effect_type: EFFECT_SUMMON,
     summon_mode: "token",
     token_data: { token_object: "oJetonRoseNoire", name: "Jeton Rose noire", archetype: "Rose noire" },
-    description: "Quand cette carte est détruite : Invoquez spécialement 1 Jeton 'Rose noire' en mode Attaque sur votre Terrain."
+    
 });

@@ -301,6 +301,10 @@ function executeEffect(card, effect, context = {}) {
                                         self._wait_destroy_on_tempo = false;
                                         if (instance_exists(self)) { instance_destroy(self); }
                                     }
+                                    if (variable_instance_exists(self, "_consume_after_flow") && self._consume_after_flow) {
+                                        self._consume_after_flow = false;
+                                        if (!is_undefined(consumeSpellIfNeeded)) { consumeSpellIfNeeded(self, undefined); }
+                                    }
                                 }));
                                 break; // Stopper le traitement immédiat au niveau de la tempo
                             } else {
@@ -515,23 +519,128 @@ function executeEffect(card, effect, context = {}) {
             
         // Effets spéciaux
         case EFFECT_SEARCH:
-            return applySearchBySpec(card, effect, context);
+        {
+            var ok_search = applySearchBySpec(card, effect, context);
+            if (ok_search) {
+                var owner_flag_s = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner"))
+                                   ? card.isHeroOwner
+                                   : (variable_struct_exists(context, "owner_is_hero") ? context.owner_is_hero : true);
+                var ctxs = { from_search: true, owner_is_hero: owner_flag_s };
+                if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
+                    var Ls = array_length(effect.flow);
+                    var idxs = 0;
+                    while (idxs < Ls) {
+                        var stepS = effect.flow[idxs];
+                        if (is_struct(stepS) && variable_struct_exists(stepS, "effect_type")) {
+                            if (stepS.effect_type == EFFECT_TEMPO) {
+                                var framesS = 0;
+                                if (variable_struct_exists(stepS, "frames")) {
+                                    framesS = max(0, stepS.frames);
+                                } else if (variable_struct_exists(stepS, "ms")) {
+                                    framesS = max(0, round((stepS.ms / 1000.0) * room_speed));
+                                }
+                                if (framesS > 0 && instance_exists(card)) {
+                                    var was_pending_s = (variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending);
+                                    if (was_pending_s) { break; }
+                                    var remaining_count_s = Ls - (idxs + 1);
+                                    var remaining_s = array_create(remaining_count_s);
+                                    var rs = 0;
+                                    for (var js = idxs + 1; js < Ls; js++) { remaining_s[rs++] = effect.flow[js]; }
+                                    card._flow_remaining_steps = remaining_s;
+                                    card._flow_owner_is_hero = owner_flag_s;
+                                    card._flow_tempo_pending = true;
+                                    call_later(framesS, time_source_units_frames, method(card, function() {
+                                        if (!instance_exists(self)) { return; }
+                                        if (!variable_instance_exists(self, "_flow_tempo_pending") || !self._flow_tempo_pending) { return; }
+                                        self._flow_tempo_pending = false;
+                                        var rem_local_s = variable_instance_exists(self, "_flow_remaining_steps") ? self._flow_remaining_steps : undefined;
+                                        var owner_local_s = variable_instance_exists(self, "_flow_owner_is_hero") ? self._flow_owner_is_hero : undefined;
+                                        if (is_array(rem_local_s)) {
+                                            for (var r2s = 0; r2s < array_length(rem_local_s); r2s++) {
+                                                var step2s = rem_local_s[r2s];
+                                                if (is_struct(step2s) && variable_struct_exists(step2s, "effect_type")) {
+                                                    executeEffect(self, step2s, { owner_is_hero: owner_local_s });
+                                                }
+                                            }
+                                        }
+                                        if (variable_instance_exists(self, "_flow_remaining_steps")) self._flow_remaining_steps = undefined;
+                                        if (variable_instance_exists(self, "_flow_owner_is_hero")) self._flow_owner_is_hero = undefined;
+                                    }));
+                                    break;
+                                }
+                            } else {
+                                executeEffect(card, stepS, { owner_is_hero: owner_flag_s });
+                            }
+                        }
+                        idxs++;
+                    }
+                } else if (variable_struct_exists(effect, "flow") && is_struct(effect.flow)) {
+                    executeEffect(card, effect.flow, ctxs);
+                } else if (variable_struct_exists(effect, "flow_next") && is_struct(effect.flow_next)) {
+                    executeEffect(card, effect.flow_next, ctxs);
+                }
+            }
+            return ok_search;
+        }
         case EFFECT_DESTROY:
         {
             var ok_destroy = applyDestroyBySpec(card, effect, context);
             if (ok_destroy) {
-                // Chaînage post-destruction: supporte flow[] (array), flow (struct unique) et flow_next (struct)
                 var owner_flag = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner"))
                                  ? card.isHeroOwner
                                  : (variable_struct_exists(context, "owner_is_hero") ? context.owner_is_hero : true);
                 var ctxd = { from_destroy: true, owner_is_hero: owner_flag };
                 if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
                     var Ld = array_length(effect.flow);
-                    for (var kd = 0; kd < Ld; kd++) {
+                    var kd = 0;
+                    while (kd < Ld) {
                         var stepD = effect.flow[kd];
                         if (is_struct(stepD) && variable_struct_exists(stepD, "effect_type")) {
-                            executeEffect(card, stepD, ctxd);
+                            if (stepD.effect_type == EFFECT_TEMPO) {
+                                var framesD = 0;
+                                if (variable_struct_exists(stepD, "frames")) {
+                                    framesD = max(0, stepD.frames);
+                                } else if (variable_struct_exists(stepD, "ms")) {
+                                    framesD = max(0, round((stepD.ms / 1000.0) * room_speed));
+                                }
+                                if (framesD > 0 && instance_exists(card)) {
+                                    var was_pending_d = (variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending);
+                                    if (was_pending_d) { break; }
+                                    var remaining_count_d = Ld - (kd + 1);
+                                    var remaining_d = array_create(remaining_count_d);
+                                    var rd = 0;
+                                    for (var jd = kd + 1; jd < Ld; jd++) { remaining_d[rd++] = effect.flow[jd]; }
+                                    card._flow_remaining_steps = remaining_d;
+                                    card._flow_owner_is_hero = owner_flag;
+                                    card._flow_tempo_pending = true;
+                                    call_later(framesD, time_source_units_frames, method(card, function() {
+                                        if (!instance_exists(self)) { return; }
+                                        if (!variable_instance_exists(self, "_flow_tempo_pending") || !self._flow_tempo_pending) { return; }
+                                        self._flow_tempo_pending = false;
+                                        var rem_local_d = variable_instance_exists(self, "_flow_remaining_steps") ? self._flow_remaining_steps : undefined;
+                                        var owner_local_d = variable_instance_exists(self, "_flow_owner_is_hero") ? self._flow_owner_is_hero : undefined;
+                                        if (is_array(rem_local_d)) {
+                                            for (var r2d = 0; r2d < array_length(rem_local_d); r2d++) {
+                                                var step2d = rem_local_d[r2d];
+                                                if (is_struct(step2d) && variable_struct_exists(step2d, "effect_type")) {
+                                                    executeEffect(self, step2d, { owner_is_hero: owner_local_d, from_destroy: true });
+                                                }
+                                            }
+                                        }
+                                        if (variable_instance_exists(self, "_flow_remaining_steps")) self._flow_remaining_steps = undefined;
+                                        if (variable_instance_exists(self, "_flow_owner_is_hero")) self._flow_owner_is_hero = undefined;
+                                        if (variable_instance_exists(self, "_consume_after_flow") && self._consume_after_flow) {
+                                            self._consume_after_flow = false;
+                                            if (!is_undefined(consumeSpellIfNeeded)) { consumeSpellIfNeeded(self, undefined); }
+                                        }
+                                    }));
+                                    break;
+                                }
+                            } else {
+                                executeEffect(card, stepD, ctxd);
+                            }
                         }
+                        kd++;
                     }
                 } else if (variable_struct_exists(effect, "flow") && is_struct(effect.flow)) {
                     executeEffect(card, effect.flow, ctxd);

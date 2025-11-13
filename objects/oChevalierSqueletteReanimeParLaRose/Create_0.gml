@@ -21,6 +21,5 @@ effects = [
     summon_mode: "named",
         // On cible par objet pour fiabilité
         target_object: "oSquelettePossedeParLaRoseNoire",
-        description: "Tombe : Invoquez spécialement un Squelette possédé par la Rose noire depuis main/deck/cimetière."
     }
 ];

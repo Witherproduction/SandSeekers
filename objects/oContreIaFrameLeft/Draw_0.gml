@@ -52,6 +52,9 @@ switch (bot_info.deck_id) {
         bot_description = bot_info.description;
         break;
 }
+// Ajouter l'information de profil
+var profile_name = get_bot_deck_profile(bot_info.deck_id);
+bot_description = bot_description + "\n\nProfil: " + profile_name;
 var bot_deck = bot_info.deck_name;
 var bot_difficulty = bot_info.difficulty;
 

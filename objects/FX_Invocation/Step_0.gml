@@ -75,6 +75,12 @@ if (!finished_move) {
                         image_angle = 270;
                         image_index = 1;
                         isFaceDown = true;
+                    } else if (ctype == "Magic" && mode == "Set") {
+                        // Secrets/magies posées côté IA doivent être face cachée
+                        orientation = "Attack";
+                        image_angle = 180;
+                        image_index = 1;
+                        isFaceDown = true;
                     } else {
                         orientation = "Attack";
                         image_angle = 180;
@@ -84,7 +90,7 @@ if (!finished_move) {
                 }
 
                 // Verrou: un monstre invoqué ne peut pas changer de position ce tour
-                if (type == "Monster") {
+                if (other.card_type == "Monster") {
                     orientationChangedThisTurn = true;
                 }
 

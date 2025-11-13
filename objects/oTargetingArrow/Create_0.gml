@@ -3,6 +3,9 @@
 // Référence vers la carte source (monstre attaquant)
 sourceCard = noone;
 
+// Optionnel: référence vers une cible fixe (monstre équipé)
+fixedTargetCard = noone;
+
 // Position de départ (centre du monstre)
 startX = 0;
 startY = 0;
@@ -34,15 +37,34 @@ function setSourceCard(card) {
     }
 }
 
+// Définit une cible fixe (par exemple, le monstre équipé)
+function setFixedTarget(card) {
+    fixedTargetCard = card;
+}
+
 // Fonction pour mettre à jour la position de fin
 function updateTarget() {
-    endX = mouse_x;
-    endY = mouse_y;
+    // Si une cible fixe est définie et existe, pointer vers son centre
+    if (fixedTargetCard != noone && instance_exists(fixedTargetCard)) {
+        var sprite_center_x_t = sprite_get_width(fixedTargetCard.sprite_index) / 2 - sprite_get_xoffset(fixedTargetCard.sprite_index);
+        var sprite_center_y_t = sprite_get_height(fixedTargetCard.sprite_index) / 2 - sprite_get_yoffset(fixedTargetCard.sprite_index);
+        endX = fixedTargetCard.x + sprite_center_x_t * fixedTargetCard.image_xscale;
+        endY = fixedTargetCard.y + sprite_center_y_t * fixedTargetCard.image_yscale;
+    } else {
+        // Sinon, suivre le curseur
+        endX = mouse_x;
+        endY = mouse_y;
+    }
 }
 
 // Fonction pour dessiner la flèche
 function drawArrow() {
     if (!instance_exists(sourceCard)) return;
+    // Si une cible fixe est définie mais n'existe plus, détruire l'instance de flèche
+    if (fixedTargetCard != noone && !instance_exists(fixedTargetCard)) {
+        instance_destroy();
+        return;
+    }
     
     // Mettre à jour les positions avec le vrai centre de la carte
     var sprite_center_x = sprite_get_width(sourceCard.sprite_index) / 2 - sprite_get_xoffset(sourceCard.sprite_index);

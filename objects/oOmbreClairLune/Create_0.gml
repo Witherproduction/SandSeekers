@@ -21,7 +21,7 @@ effects = [
         effect_type: EFFECT_DRAW_CARDS,
         value: 1,
         flow: [
-            { effect_type: EFFECT_TEMPO, ms: 400 },
+            { effect_type: EFFECT_TEMPO, ms: 1000 },
             { effect_type: EFFECT_DISCARD, selection: { mode: "random", count: 1 }, description: "Puis défaussez au hasard 1 carte de votre main." }
         ],
         description: "Quand cette carte entre au cimetière : piochez 1 carte, puis défaussez au hasard 1 carte de votre main."

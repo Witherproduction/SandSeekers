@@ -22,5 +22,5 @@ array_push(effects, {
     destination: "Deck", // Ajoute au deck
     search_criteria: { archetype: "Rose noire", type: "Magic" },
     shuffle_deck: true, // Mélange le deck après l'ajout
-    description: "Quand cette carte est envoyée au cimetière: ajoutez aléatoirement une carte Magie 'Rose noire' depuis votre cimetière à votre deck, puis mélangez votre deck."
+    
 });

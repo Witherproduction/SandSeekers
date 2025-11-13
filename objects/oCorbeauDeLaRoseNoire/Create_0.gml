@@ -11,13 +11,12 @@ archetype = "Rose noire"
 booster = "Chemin perdu"
 rarity = "commun"
 is_player_card = true; // Définit explicitement cette carte comme appartenant au joueur
-description = "Perdu :  défaussez 1 carte aléatoire de votre main et envoyez-la au cimetière.";
+description = "Perdu :  défaussez 1 carte aléatoire de votre main.";
 
 effects = [
     {
         trigger: TRIGGER_ENTER_GRAVEYARD,
         effect_type: EFFECT_DISCARD,
         selection: { mode: "random", count: 1 },
-        description: "Quand cette carte entre au cimetière : défaussez au hasard 1 carte de votre main."
     }
 ];

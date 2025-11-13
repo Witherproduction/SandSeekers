@@ -7,89 +7,118 @@
 function get_bot_deck_cards(deck_id) {
     
     switch(deck_id) {
-        case 1: // Bot 1 - Deck Rose noire (Archétype Rose noire)
+        case 1: // Bot 1 - Deck Rose noire (25 monstres, 15 magies) — Chemin perdu, profil Balanced
             return [
-                "oEruditDeLaRoseNoire", "oEruditDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oSquelettePossedeParLaRoseNoire", "oSquelettePossedeParLaRoseNoire",
-                "oDragonnetBeniRoseNoire", "oDragonnetBeniRoseNoire", "oChevalierSqueletteReanimeParLaRose", "oChevalierSqueletteReanimeParLaRose", "oDragonSacreRoseNoire", "oDragonSacreRoseNoire",
-                "oLacEnvahiParLaRoseNoire", "oLacEnvahiParLaRoseNoire", "oDragonCorrompuRoseNoire", "oDragonCorrompuRoseNoire", "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire",
-                "oPetiteSorciereDeLaRoseNoire", "oPetiteSorciereDeLaRoseNoire", "oTreantDeLaRoseNoire", "oTreantDeLaRoseNoire", "oOmbreDeLaRoseNoire", "oOmbreDeLaRoseNoire",
-                "oSorciereDeLaRoseNoire", "oSorciereDeLaRoseNoire", "oAraigneeDeLaRoseNoire", "oAraigneeDeLaRoseNoire", "oPetaleDeLaRoseNoire", "oPetaleDeLaRoseNoire",
-                // Ajout de sorts thématiques Rose noire pour atteindre 40 cartes
-                "oRoseNoire", "oBrumeRoseNoire", "oMaledictionRoseNoire", "oFloraisonRosePerdue", "oMaladieRonceNoire", "oBlessureInfecteRoseNoire",
-                // Quelques monstres clés pour compléter
-                "oChevalierSqueletteReanimeParLaRose", "oDragonSacreRoseNoire", "oLacEnvahiParLaRoseNoire", "oDragonCorrompuRoseNoire"
+                // Monstres (25) — mettre à 2 exemplaires, sauf exceptions indiquées
+                "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire",
+                "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire",
+                "oAraigneeDeLaRoseNoire", "oAraigneeDeLaRoseNoire",
+                "oDragonnetBeniRoseNoire", "oDragonnetBeniRoseNoire",
+                "oChevalierSqueletteReanimeParLaRose", "oChevalierSqueletteReanimeParLaRose",
+                "oTreant", "oTreant",
+                "oAraigneeSombreForet", "oAraigneeSombreForet",
+                "oPetiteSorciereDeLaRoseNoire", "oPetiteSorciereDeLaRoseNoire",
+                "oSorciereDeLaRoseNoire", "oSorciereDeLaRoseNoire",
+                "oSquelettePossedeParLaRoseNoire", "oSquelettePossedeParLaRoseNoire",
+                // Exceptions
+                "oEruditDeLaRoseNoire",
+                // Limite unique
+                "oDragonSacreRoseNoire",
+                // Compléments pour atteindre 25
+                "oChevalierSqueletteReanime",
+                "oChevalForet",
+                "oLacEnvahiParLaRoseNoire",
+                // Magies (15)
+                "oRoseNoire", "oRoseNoire", "oRoseNoire",
+                "oBaguetteRoseNoire", "oBaguetteRoseNoire", "oBaguetteRoseNoire",
+                "oBrumeRoseNoire", "oBrumeRoseNoire",
+                "oMaledictionRoseNoire", "oMaledictionRoseNoire",
+                "oFloraisonRosePerdue", "oFloraisonRosePerdue",
+                // Secrets
+                "oRonceNoire", "oRonceNoire",
+                "oMaladieRonceNoire"
             ];
             
-        case 2: // Bot 2 - Deck Dragon (Genre Dragon)
+        case 2: // Bot 2 - Deck Dragon (25 monstres, 15 magies) — Chemin perdu, profil Stompy
             return [
-                // Thème Dragon (3 copies max)
+                // Monstres (25)
                 "oDragonSacreClairLune", "oDragonSacreClairLune", "oDragonSacreClairLune",
                 "oDragonnetForet", "oDragonnetForet", "oDragonnetForet",
-                "oDragonSacreRoseNoire", "oDragonSacreRoseNoire", "oDragonSacreRoseNoire",
                 "oDragonnetBeniRoseNoire", "oDragonnetBeniRoseNoire", "oDragonnetBeniRoseNoire",
-                "oDragonCorrompuRoseNoire", "oDragonCorrompuRoseNoire", "oDragonCorrompuRoseNoire",
                 "oAncienDragonBeniForet", "oAncienDragonBeniForet", "oAncienDragonBeniForet",
-                // Complément avec autres monstres (non-Dragon)
+                // Limite unique
+                "oDragonSacreRoseNoire",
                 "oChevalForet", "oChevalForet", "oChevalForet",
                 "oSorciereForet", "oSorciereForet", "oSorciereForet",
-                "oEruditForet", "oEruditForet",
-                "oNueeCorbeaux", "oNueeCorbeaux",
+                "oTreant", "oTreant", "oTreant",
+                "oEruditForet",
+                // Ajouts: loups pour invocation facile
                 "oLoupAlphaForet", "oLoupAlphaForet",
-                "oAraigneeSombreForet", "oAraigneeSombreForet", "oAraigneeSombreForet",
-                "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire",
-                "oTreant",
-                "oPetaleRose",
-                // Ajout de sorts thématiques Dragon/neutres pour compléter à 40 cartes
-                "oAileForet", "oEcailleForet", "oGriffeForet"
+                // Magies (15)
+                "oAileForet", "oAileForet",
+                "oEcailleForet", "oEcailleForet",
+                "oGriffeForet", "oGriffeForet",
+                "oRoseNoire", "oRoseNoire",
+                "oClairLuneForetMaudite", "oClairLuneForetMaudite",
+                // Secrets ajoutés (remplace ClairLune Béni)
+                "oRonceNoire", "oRonceNoire", "oRonceNoire",
+                "oMaladieRonceNoire", "oMaladieRonceNoire"
             ];
             
-        case 3: // Bot 3 - Deck Bête (Genre Bête)
+        case 3: // Bot 3 - Deck Bête (30 monstres, 10 magies) — profil Aggro
             return [
-                // Thème Bête (3 copies max)
-                "oNueeCorbeaux", "oNueeCorbeaux", "oNueeCorbeaux",
-                "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire",
+                // Monstres (30)
                 "oChevalForet", "oChevalForet", "oChevalForet",
                 "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire",
                 "oLoupAlphaForet", "oLoupAlphaForet", "oLoupAlphaForet",
-                "oLoupBeniParLaRoseNoire", "oLoupBeniParLaRoseNoire", "oLoupBeniParLaRoseNoire",
-                // Complément avec autres monstres (non-Bête) jusqu'à 40
-                "oDragonSacreClairLune", "oDragonSacreClairLune", "oDragonSacreClairLune",
-                "oDragonnetForet", "oDragonnetForet", "oDragonnetForet",
-                "oOmbreClairLune", "oOmbreClairLune", "oOmbreClairLune",
-                "oSqueletteReanime", "oSqueletteReanime", "oSqueletteReanime",
-                "oChevalierSqueletteReanime", "oChevalierSqueletteReanime", "oChevalierSqueletteReanime",
-                "oSorciereForet", "oSorciereForet", "oSorciereForet",
-                "oEruditForet", "oEruditForet",
-                // Remplacement par des sorts thématiques Bête/neutres pour garder 40 cartes
-                "oBaguetteClairLune", "oSacrificeMeute"
-            ];
-            
-        case 4: // Bot 4 - Deck Mort-vivant (Genre Mort-vivant)
-            return [
-                // Thème Mort-vivant (3 copies max)
-                "oChevalierSqueletteReanime", "oChevalierSqueletteReanime", "oChevalierSqueletteReanime",
-                "oOmbreClairLune", "oOmbreClairLune", "oOmbreClairLune",
-                "oSqueletteReanime", "oSqueletteReanime", "oSqueletteReanime",
-                "oSquelettePossedeParLaRoseNoire", "oSquelettePossedeParLaRoseNoire", "oSquelettePossedeParLaRoseNoire",
-                "oChevalierSqueletteReanimeParLaRose", "oChevalierSqueletteReanimeParLaRose", "oChevalierSqueletteReanimeParLaRose",
-                "oOmbreDeLaRoseNoire", "oOmbreDeLaRoseNoire", "oOmbreDeLaRoseNoire",
-                // Complément avec autres monstres (non-Mort-vivant) jusqu'à 40
-                "oDragonSacreClairLune", "oDragonSacreClairLune", "oDragonSacreClairLune",
-                "oDragonnetForet", "oDragonnetForet", "oDragonnetForet",
-                "oDragonSacreRoseNoire", "oDragonSacreRoseNoire", "oDragonSacreRoseNoire",
-                "oAncienDragonBeniForet", "oAncienDragonBeniForet", "oAncienDragonBeniForet",
-                "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire",
                 "oNueeCorbeaux", "oNueeCorbeaux", "oNueeCorbeaux",
-                "oChevalForet", "oChevalForet", "oChevalForet",
-                // Ajout d'un sort synergique pour remplir à 40
-                "oClairLuneForetMaudite"
+                "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire",
+                "oAraigneeSombreForet", "oAraigneeSombreForet", "oAraigneeSombreForet",
+                // Ajout pour compenser Érudit réduit
+                "oAraigneeDeLaRoseNoire", "oAraigneeDeLaRoseNoire",
+                "oDragonnetForet", "oDragonnetForet", "oDragonnetForet",
+                "oTreant", "oTreant", "oTreant",
+                "oEruditForet",
+                "oSorciereForet", "oSorciereForet", "oSorciereForet",
+                // Magies (10)
+                "oSacrificeMeute", "oSacrificeMeute", "oSacrificeMeute",
+                "oMaledictionClairLune", "oMaledictionClairLune",
+                "oRoseNoire",
+                "oEcailleForet",
+                "oRonceNoire", "oRonceNoire",
+                "oMaladieRonceNoire"
             ];
             
-        case 5: // Deck Bot 5 - Maître du Contrôle
+        case 4: // Bot 4 - Deck Contrôle (Mort-vivant & Humanoïde) (25 monstres, 15 magies) — Chemin perdu
             return [
-                "oDragonDivinRagnarok", "oDragonDivinRagnarok", "oSorciereDeLaRoseNoire", "oSorciereDeLaRoseNoire", "oSorciereDeLaRoseNoire", "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire",
-                "oCorbeauDeLaRoseNoire", "oCorbeauDeLaRoseNoire", "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire", "oChevalDeLaRoseNoire",
-                "oDragonDivinRagnarok", "oDragonDivinRagnarok", "oDragonDivinRagnarok", "oDragonDivinRagnarok", "oDragonDivinRagnarok", "oDragonDivinRagnarok", "oDragonDivinRagnarok"
+                // Monstres (25)
+                "oChevalierSqueletteReanime", "oChevalierSqueletteReanime", "oChevalierSqueletteReanime",
+                "oSqueletteReanime", "oSqueletteReanime", "oSqueletteReanime",
+                "oChevalierSqueletteReanimeParLaRose", "oChevalierSqueletteReanimeParLaRose", "oChevalierSqueletteReanimeParLaRose",
+                "oOmbreClairLune", "oOmbreClairLune", "oOmbreClairLune",
+                "oEruditForet", "oEruditForet", "oEruditForet",
+                "oSorciereForet", "oSorciereForet", "oSorciereForet",
+                "oEruditDeLaRoseNoire", "oEruditDeLaRoseNoire", "oEruditDeLaRoseNoire",
+                "oPetiteSorciereForet", "oPetiteSorciereForet", "oPetiteSorciereForet",
+                "oCorbeauDeLaRoseNoire",
+                // Magies (15)
+                "oRonceNoire", "oRonceNoire", "oRonceNoire",
+                "oMaladieRonceNoire", "oMaladieRonceNoire",
+                "oMaledictionRoseNoire", "oMaledictionRoseNoire",
+                "oClairLuneForetMaudite", "oClairLuneForetMaudite", "oClairLuneForetMaudite",
+                "oClairLuneBeni", "oClairLuneBeni",
+                "oBaguetteRoseNoire", "oBaguetteRoseNoire",
+                "oTalismanPerdu"
+            ];
+            
+        case 5: // Deck Bot 5 — Test Rose noire & Baguette (15 cartes, complété à 40)
+            return [
+                // 5x Petite Sorcière de la Rose noire
+                "oPetiteSorciereDeLaRoseNoire", "oPetiteSorciereDeLaRoseNoire", "oPetiteSorciereDeLaRoseNoire", "oPetiteSorciereDeLaRoseNoire", "oPetiteSorciereDeLaRoseNoire",
+                // 5x Baguette de la Rose noire
+                "oBaguetteRoseNoire", "oBaguetteRoseNoire", "oBaguetteRoseNoire", "oBaguetteRoseNoire", "oBaguetteRoseNoire",
+                // 5x La Rose noire
+                "oRoseNoire", "oRoseNoire", "oRoseNoire", "oRoseNoire", "oRoseNoire"
             ];
             
         // Decks génériques pour les bots 6-29
@@ -177,8 +206,9 @@ function fill_to_size(deck_cards, target_size, max_copies) {
 /// @param {string} bot_name - Le nom du bot
 function create_bot_deck_from_script(deck_id, bot_name) {
     var deck_cards = get_bot_deck_cards(deck_id);
-    deck_cards = cap_card_copies(deck_cards, 3);
-    deck_cards = fill_to_size(deck_cards, 40, 3);
+    var max_copies = (deck_id == 5) ? 5 : 3;
+    deck_cards = cap_card_copies(deck_cards, max_copies);
+    deck_cards = fill_to_size(deck_cards, 40, max_copies);
     
     var bot_deck = {
         name: "Deck de " + bot_name,
@@ -211,5 +241,18 @@ function get_bot_deck_name(deck_id) {
         case 4: return "Mort-vivant";
         case 5: return "Maître du Contrôle";
         default: return "Bot " + string(deck_id);
+    }
+}
+
+/// @function get_bot_deck_profile(deck_id)
+/// @description Retourne le libellé de profil d'archétype pour affichage
+/// @param {real} deck_id - L'ID du deck
+function get_bot_deck_profile(deck_id) {
+    switch(deck_id) {
+        case 1: return "Balanced";
+        case 2: return "Stompy";
+        case 3: return "Aggro";
+        case 4: return "Control";
+        default: return "Balanced";
     }
 }

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sAISacrifice",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sAISacrifice",
+  "parent":{
+    "name":"IA",
+    "path":"folders/Scripts/IA.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

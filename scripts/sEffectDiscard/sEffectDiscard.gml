@@ -67,15 +67,55 @@ function sEffectDiscard(card, effect, context) {
         if (variable_struct_exists(effect, "id")) ctxSelf.source_effect_id = effect.id;
         ctxSelf.discarded_cards = selectedSelf;
 
-        // Chaîner les post-étapes si présentes (flow[] ou flow_next)
         if (okSelf) {
             if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
                 var Ls = array_length(effect.flow);
-                for (var ks = 0; ks < Ls; ks++) {
-                    var stepEffS = effect.flow[ks];
+                var idxs = 0;
+                while (idxs < Ls) {
+                    var stepEffS = effect.flow[idxs];
                     if (is_struct(stepEffS) && variable_struct_exists(stepEffS, "effect_type")) {
-                        executeEffect(card, stepEffS, ctxSelf);
+                        if (stepEffS.effect_type == EFFECT_TEMPO) {
+                            var framesS = 0;
+                            if (variable_struct_exists(stepEffS, "frames")) framesS = max(0, stepEffS.frames);
+                            else if (variable_struct_exists(stepEffS, "ms")) framesS = max(0, round((stepEffS.ms / 1000.0) * room_speed));
+                            if (framesS > 0 && instance_exists(card)) {
+                                var was_pending_s = (variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending);
+                                if (was_pending_s) break;
+                                var remaining_count_s = Ls - (idxs + 1);
+                                var remaining_s = array_create(remaining_count_s);
+                                var rs = 0;
+                                for (var js = idxs + 1; js < Ls; js++) { remaining_s[rs++] = effect.flow[js]; }
+                                card._flow_remaining_steps = remaining_s;
+                                card._flow_ctx = ctxSelf;
+                                card._flow_tempo_pending = true;
+                                call_later(framesS, time_source_units_frames, method(card, function() {
+                                    if (!instance_exists(self)) return;
+                                    if (!variable_instance_exists(self, "_flow_tempo_pending") || !self._flow_tempo_pending) return;
+                                    self._flow_tempo_pending = false;
+                                    var remaining_local_s = variable_instance_exists(self, "_flow_remaining_steps") ? self._flow_remaining_steps : undefined;
+                                    var ctx_local_s = variable_instance_exists(self, "_flow_ctx") ? self._flow_ctx : {};
+                                    if (is_array(remaining_local_s)) {
+                                        for (var r2s = 0; r2s < array_length(remaining_local_s); r2s++) {
+                                            var step2s = remaining_local_s[r2s];
+                                            if (is_struct(step2s) && variable_struct_exists(step2s, "effect_type")) {
+                                                executeEffect(self, step2s, ctx_local_s);
+                                            }
+                                        }
+                                    }
+                                    if (variable_instance_exists(self, "_flow_remaining_steps")) self._flow_remaining_steps = undefined;
+                                    if (variable_instance_exists(self, "_flow_ctx")) self._flow_ctx = undefined;
+                                    if (variable_instance_exists(self, "_consume_after_flow") && self._consume_after_flow) {
+                                        self._consume_after_flow = false;
+                                        if (!is_undefined(consumeSpellIfNeeded)) { consumeSpellIfNeeded(self, undefined); }
+                                    }
+                                }));
+                                break;
+                            }
+                        } else {
+                            executeEffect(card, stepEffS, ctxSelf);
+                        }
                     }
+                    idxs++;
                 }
             } else if (variable_struct_exists(effect, "flow_next") && is_struct(effect.flow_next)) {
                 executeEffect(card, effect.flow_next, ctxSelf);
@@ -148,15 +188,55 @@ function sEffectDiscard(card, effect, context) {
     if (variable_struct_exists(effect, "id")) ctx.source_effect_id = effect.id;
     ctx.discarded_cards = selected; // ds_list de cartes défaussées (instances au moment de la sélection)
 
-    // Chaîner les post-étapes si présentes (flow[] ou flow_next)
     if (ok) {
         if (variable_struct_exists(effect, "flow") && is_array(effect.flow)) {
             var L = array_length(effect.flow);
-            for (var k = 0; k < L; k++) {
-                var stepEff = effect.flow[k];
+            var idx = 0;
+            while (idx < L) {
+                var stepEff = effect.flow[idx];
                 if (is_struct(stepEff) && variable_struct_exists(stepEff, "effect_type")) {
-                    executeEffect(card, stepEff, ctx);
+                    if (stepEff.effect_type == EFFECT_TEMPO) {
+                        var frames = 0;
+                        if (variable_struct_exists(stepEff, "frames")) frames = max(0, stepEff.frames);
+                        else if (variable_struct_exists(stepEff, "ms")) frames = max(0, round((stepEff.ms / 1000.0) * room_speed));
+                        if (frames > 0 && instance_exists(card)) {
+                            var was_pending = (variable_instance_exists(card, "_flow_tempo_pending") && card._flow_tempo_pending);
+                            if (was_pending) break;
+                            var remaining_count = L - (idx + 1);
+                            var remaining = array_create(remaining_count);
+                            var r = 0;
+                            for (var j = idx + 1; j < L; j++) { remaining[r++] = effect.flow[j]; }
+                            card._flow_remaining_steps = remaining;
+                            card._flow_ctx = ctx;
+                            card._flow_tempo_pending = true;
+                            call_later(frames, time_source_units_frames, method(card, function() {
+                                if (!instance_exists(self)) return;
+                                if (!variable_instance_exists(self, "_flow_tempo_pending") || !self._flow_tempo_pending) return;
+                                self._flow_tempo_pending = false;
+                                var remaining_local = variable_instance_exists(self, "_flow_remaining_steps") ? self._flow_remaining_steps : undefined;
+                                var ctx_local = variable_instance_exists(self, "_flow_ctx") ? self._flow_ctx : {};
+                                if (is_array(remaining_local)) {
+                                    for (var r2 = 0; r2 < array_length(remaining_local); r2++) {
+                                        var step2 = remaining_local[r2];
+                                        if (is_struct(step2) && variable_struct_exists(step2, "effect_type")) {
+                                            executeEffect(self, step2, ctx_local);
+                                        }
+                                    }
+                                }
+                                if (variable_instance_exists(self, "_flow_remaining_steps")) self._flow_remaining_steps = undefined;
+                                if (variable_instance_exists(self, "_flow_ctx")) self._flow_ctx = undefined;
+                                if (variable_instance_exists(self, "_consume_after_flow") && self._consume_after_flow) {
+                                    self._consume_after_flow = false;
+                                    if (!is_undefined(consumeSpellIfNeeded)) { consumeSpellIfNeeded(self, undefined); }
+                                }
+                            }));
+                            break;
+                        }
+                    } else {
+                        executeEffect(card, stepEff, ctx);
+                    }
                 }
+                idx++;
             }
         } else if (variable_struct_exists(effect, "flow_next") && is_struct(effect.flow_next)) {
             executeEffect(card, effect.flow_next, ctx);

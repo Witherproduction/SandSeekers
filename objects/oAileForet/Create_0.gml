@@ -20,6 +20,7 @@ array_push(
         effect_type: EFFECT_DISCARD,
         selection: { mode: "count", count: 2 },
         flow: [
+            { effect_type: EFFECT_TEMPO, ms: 1000 },
             {
                 effect_type: EFFECT_SEARCH,
                 search_sources: ["Deck"],

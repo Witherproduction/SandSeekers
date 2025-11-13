@@ -49,6 +49,9 @@ switch (bot_info.deck_id) {
         bot_description = bot_info.description;
         break;
 }
+// Ajouter le profil pour un calcul de hauteur identique à l'affichage
+var profile_name = get_bot_deck_profile(bot_info.deck_id);
+bot_description = bot_description + "\n\nProfil: " + profile_name;
 
 content_y += line_height; // label "Description:"
 var desc_h = string_height_ext(bot_description, line_height, frame_width - 40);

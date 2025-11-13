@@ -27,6 +27,7 @@ effects = [
         description: "Détruisez 1 carte 'Rose noire' que vous contrôlez.",
         // Étape 2 en flow: détruire jusqu'à 2 cartes adverses (monstres ou magies) sur le terrain
         flow: [
+            { effect_type: EFFECT_TEMPO, ms: 1000 },
             {
                 id: 2,
                 effect_type: EFFECT_DESTROY,
