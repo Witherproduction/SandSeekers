@@ -24,23 +24,30 @@ function AI_EvaluateContinuousNetGain(card) {
 
         var eType = variable_struct_exists(e, "effect_type") ? e.effect_type : -1;
 
-        // Aura: buff ATK/DEF par archétype
-        if (eType == EFFECT_AURA_ARCHETYPE_BUFF) {
-            var archetype = variable_struct_exists(e, "archetype") ? e.archetype : "";
-            var atk = variable_struct_exists(e, "atk") ? e.atk : 500;
-            var def = variable_struct_exists(e, "def") ? e.def : 500;
-            var delta = atk + def;
-            // Parcourir les monstres sur le terrain
-            for (var s = 0; s < 5; s++) {
-                var mHero = fieldMonsterHero.cards[s];
-                if (mHero != 0 && instance_exists(mHero)) {
-                    var matchH = (variable_instance_exists(mHero, "archetype") && string_lower(mHero.archetype) == string_lower(archetype));
-                    if (matchH) net -= delta; // buff côté héros => négatif pour l’IA
+        // Aura: buff ATK/DEF par critères
+        if (eType == EFFECT_BUFF && e.trigger == TRIGGER_CONTINUOUS) {
+            var scope = variable_struct_exists(e, "scope") ? string_lower(e.scope) : "single";
+            if (scope == "aura" || scope == "all") {
+                var atk = variable_struct_exists(e, "atk") ? e.atk : (variable_struct_exists(e, "value") ? e.value : 0);
+                var def = variable_struct_exists(e, "def") ? e.def : (variable_struct_exists(e, "value") ? e.value : 0);
+                var delta = atk + def;
+                var critArch = "";
+                if (variable_struct_exists(e, "criteria") && is_struct(e.criteria) && variable_struct_exists(e.criteria, "archetype")) {
+                    critArch = string_lower(string(e.criteria.archetype));
                 }
-                var mEnemy = fieldMonsterEnemy.cards[s];
-                if (mEnemy != 0 && instance_exists(mEnemy)) {
-                    var matchE = (variable_instance_exists(mEnemy, "archetype") && string_lower(mEnemy.archetype) == string_lower(archetype));
-                    if (matchE) net += delta; // buff côté ennemi (IA) => positif
+                for (var s = 0; s < 5; s++) {
+                    var mHero = fieldMonsterHero.cards[s];
+                    if (mHero != 0 && instance_exists(mHero)) {
+                        var matchH = true;
+                        if (critArch != "") { matchH = (variable_instance_exists(mHero, "archetype") && string_lower(mHero.archetype) == critArch); }
+                        if (matchH) net -= delta;
+                    }
+                    var mEnemy = fieldMonsterEnemy.cards[s];
+                    if (mEnemy != 0 && instance_exists(mEnemy)) {
+                        var matchE = true;
+                        if (critArch != "") { matchE = (variable_instance_exists(mEnemy, "archetype") && string_lower(mEnemy.archetype) == critArch); }
+                        if (matchE) net += delta;
+                    }
                 }
             }
         }

@@ -325,6 +325,7 @@
     {"id":{"name":"sSummonUtils","path":"scripts/sSummonUtils/sSummonUtils.yy",},},
     {"id":{"name":"sTriggerLabels","path":"scripts/sTriggerLabels/sTriggerLabels.yy",},},
     {"id":{"name":"sTriggers","path":"scripts/sTriggers/sTriggers.yy",},},
+    {"id":{"name":"MainTheme","path":"sounds/MainTheme/MainTheme.yy",},},
     {"id":{"name":"sAileForet","path":"sprites/sAileForet/sAileForet.yy",},},
     {"id":{"name":"sAncienDragonbeniForet","path":"sprites/sAncienDragonbeniForet/sAncienDragonbeniForet.yy",},},
     {"id":{"name":"sAndroidEcologique","path":"sprites/sAndroidEcologique/sAndroidEcologique.yy",},},

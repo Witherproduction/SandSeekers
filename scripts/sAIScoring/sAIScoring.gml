@@ -16,7 +16,7 @@ function AI_EffectPriority(card, effect) {
         var tAtk = (tgt != noone && variable_instance_exists(tgt, "attack")) ? tgt.attack : 0;
         base = (1000 + tAtk) * (profile.removal_weight / 50.0);
         if (dif == 1 && heroHas) base += 300;
-    } else if (eType == EFFECT_GAIN_ATTACK || eType == EFFECT_GAIN_DEFENSE || eType == EFFECT_SET_ATTACK || eType == EFFECT_SET_DEFENSE) {
+    } else if (eType == EFFECT_BUFF || eType == EFFECT_SET_ATTACK || eType == EFFECT_SET_DEFENSE) {
         base = 600 * (profile.board_presence_weight / 50.0);
         if (dif == 1 && ourCount > 0) base += 150;
     } else if (eType == EFFECT_DRAW_CARDS || eType == EFFECT_SEARCH) {

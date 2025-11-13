@@ -267,8 +267,14 @@ function getEffectDescription(effect) {
         case EFFECT_GAIN_LP:
             desc = "Gagnez " + string(value) + " LP";
             break;
-        case EFFECT_GAIN_ATTACK:
-            desc = "Gagnez " + string(value) + " ATK";
+        case EFFECT_BUFF:
+            var a = variable_struct_exists(effect, "atk") ? effect.atk : (variable_struct_exists(effect, "value") ? effect.value : 0);
+            var d = variable_struct_exists(effect, "def") ? effect.def : 0;
+            var parts = [];
+            if (a != 0) array_push(parts, "+" + string(a) + " ATK");
+            if (d != 0) array_push(parts, "+" + string(d) + " DEF");
+            var txt = (array_length(parts) > 0) ? string_join(parts, " / ") : "Buff";
+            desc = txt;
             break;
         case EFFECT_DAMAGE_TARGET:
             desc = "Infligez " + string(value) + " dégâts à une cible";
@@ -279,110 +285,7 @@ function getEffectDescription(effect) {
     return desc;
 }
 
-/// @function applyGraveyardArchetypeBoost(card, effect)
-function applyGraveyardArchetypeBoost(card, effect) {
-    if (card == noone || !instance_exists(card)) return false;
-    if (!variable_instance_exists(card, "zone")) return false;
-    if (!(card.zone == "Field" || card.zone == "FieldSelected")) return false;
-    var archetype = variable_struct_exists(effect, "archetype") ? effect.archetype : "Rose noire";
-    var boostPerCard = variable_struct_exists(effect, "boost_per_card") ? effect.boost_per_card : 500;
-    var count_monsters = 0;
-    if (instance_exists(graveyardHero)) {
-        var gyh_cards = graveyardHero.cards;
-        for (var i = 0; i < array_length(gyh_cards); i++) {
-            var cd = gyh_cards[i];
-            if (is_struct(cd)) {
-                if (object_is_ancestor(cd.object_index, oCardMonster)) {
-                    var archeMatch = false;
-                    if (variable_struct_exists(cd, "archetype") && cd.archetype != "") { archeMatch = (string_lower(cd.archetype) == string_lower(archetype)); }
-                    else { var nm = string_lower(cd.name); archeMatch = (string_pos(string_lower(archetype), nm) > 0); }
-                    if (archeMatch) { count_monsters++; }
-                }
-            }
-        }
-    }
-    if (instance_exists(graveyardEnemy)) {
-        var gye_cards = graveyardEnemy.cards;
-        for (var j = 0; j < array_length(gye_cards); j++) {
-            var cd2 = gye_cards[j];
-            if (is_struct(cd2)) {
-                if (object_is_ancestor(cd2.object_index, oCardMonster)) {
-                    var archeMatch2 = false;
-                    if (variable_struct_exists(cd2, "archetype") && cd2.archetype != "") { archeMatch2 = (string_lower(cd2.archetype) == string_lower(archetype)); }
-                    else { var nm2 = string_lower(cd2.name); archeMatch2 = (string_pos(string_lower(archetype), nm2) > 0); }
-                    if (archeMatch2) { count_monsters++; }
-                }
-            }
-        }
-    }
-    var totalBoost = count_monsters * boostPerCard;
-    var srcKey = "effect:" + string(effect.effect_type) + ":" + string(card.id);
-    buffSetContribution(card, srcKey, totalBoost, 0);
-    buffRecompute(card);
-    if (variable_global_exists("debug_boost_logs") && global.debug_boost_logs) {
-        show_debug_message("### Continuous Boost (agg): " + string(card.name) + " -> +" + string(totalBoost) + " ATK (" + string(count_monsters) + " '" + string(archetype) + "' au cimetière)");
-    }
-    return true;
-}
 
-/// @function applyGraveyardGenreBoost(card, effect)
-function applyGraveyardGenreBoost(card, effect) {
-    if (card == noone || !instance_exists(card)) return false;
-    if (!variable_instance_exists(card, "zone")) return false;
-    if (!(card.zone == "Field" || card.zone == "FieldSelected")) return false;
-    var genre = variable_struct_exists(effect, "genre") ? effect.genre : "Dragon";
-    var boostPerCard = variable_struct_exists(effect, "boost_per_card") ? effect.boost_per_card : 100;
-
-    // Déterminer la cible du buff: monstre équipé si carte d’artefact, sinon la carte elle-même si monstre
-    var t = noone;
-    if (object_is_ancestor(card.object_index, oCardMonster)) {
-        t = card;
-    } else if (object_is_ancestor(card.object_index, oCardMagic) && variable_instance_exists(card, "equipped_target")) {
-        t = card.equipped_target;
-    }
-    // Si la cible n'existe plus ou n'est plus sur le terrain, détruire l'équipement posé
-    if (t == noone || !instance_exists(t) || !variable_instance_exists(t, "zone") || !(t.zone == "Field" || t.zone == "FieldSelected")) {
-        // Ne pas détruire si l'équipement est face cachée ou en cours de ciblage
-        if (variable_instance_exists(card, "zone") && card.zone == "Field") {
-            if (variable_instance_exists(card, "isFaceDown") && card.isFaceDown) {
-                return false;
-            }
-            if (variable_instance_exists(card, "equip_pending") && card.equip_pending) {
-                return false;
-            }
-            show_debug_message("### Equip (genre boost): cible perdue -> destruction de l'équipement");
-            return destroyCard(card);
-        }
-        return false;
-    }
-
-    // Comptage sur le cimetière du propriétaire de l’artefact (votre cimetière)
-    var ownerIsHero = (variable_instance_exists(card, "isHeroOwner") && card.isHeroOwner);
-    var gyInst = ownerIsHero ? graveyardHero : graveyardEnemy;
-
-    var count_monsters = 0;
-    if (instance_exists(gyInst)) {
-        var gy_cards = gyInst.cards;
-        for (var i = 0; i < array_length(gy_cards); i++) {
-            var cd = gy_cards[i];
-            if (is_struct(cd) && object_is_ancestor(cd.object_index, oCardMonster)) {
-                if (variable_struct_exists(cd, "genre") && string_lower(cd.genre) == string_lower(genre)) {
-                    count_monsters++;
-                }
-            }
-        }
-    }
-
-    var totalBoost = count_monsters * boostPerCard;
-    // Utiliser la même clé que les effets d’équipement pour que le cleanup la retire
-    var srcKey = "equip:" + string(card.id);
-    buffSetContribution(t, srcKey, totalBoost, 0);
-    buffRecompute(t);
-    if (variable_global_exists("debug_boost_logs") && global.debug_boost_logs) {
-        show_debug_message("### Continuous Boost (genre): " + string(t.name) + " -> +" + string(totalBoost) + " ATK (" + string(count_monsters) + " '" + string(genre) + "' au cimetière du propriétaire)");
-    }
-    return true;
-}
 
 /// @function hasEnemySpellOnField(ownerIsHero)
 /// @description Vérifie s'il existe au moins une carte de type Magic sur le terrain adverse

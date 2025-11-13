@@ -15,15 +15,12 @@
 
 
 // Effets de combat
-#macro EFFECT_GAIN_ATTACK "gain_attack"                 // Gagner de l'ATK
 #macro EFFECT_LOSE_ATTACK "lose_attack"                 // Perdre de l'ATK
 #macro EFFECT_LOSE_ATTACK_PERMANENT "lose_attack_permanent" // Perdre de l'ATK de façon permanente
-#macro EFFECT_GAIN_DEFENSE "gain_defense"               // Gagner de la DEF
 #macro EFFECT_LOSE_DEFENSE "lose_defense"               // Perdre de la DEF
 #macro EFFECT_SET_ATTACK "set_attack"                   // Définir l'ATK
 #macro EFFECT_SET_DEFENSE "set_defense"                 // Définir la DEF
 #macro EFFECT_BUFF "buff"
-#macro EFFECT_BUFF_TARGET_BY_CRITERIA "buff_target_by_criteria"   // Buff une cible selon critères
 
 // Effets de ciblage
 #macro EFFECT_DAMAGE_TARGET "damage_target"             // Infliger des dégâts à une cible
@@ -78,22 +75,16 @@
 // Effet combiné: défausser cette carte de la main pour chercher par archétype
 
 
-// Effet continu: boost d'ATK basé sur l'archétype dans les cimetières
-#macro EFFECT_BOOST_ATK_PER_GRAVEYARD_ARCHETYPE "boost_atk_per_graveyard_archetype"
-#macro EFFECT_BOOST_ATK_PER_GRAVEYARD_GENRE "boost_atk_per_graveyard_genre"
 
 // Effets d’équipement (nouveaux)
 #macro EFFECT_EQUIP_SELECT_TARGET "equip_select_target"   // Sélectionner une cible et équiper
-#macro EFFECT_EQUIP_APPLY_BUFF "equip_apply_buff"         // Appliquer le buff à la cible équipée
 #macro EFFECT_EQUIP_CLEANUP "equip_cleanup"               // Nettoyer à la destruction (réinitialiser la cible)
 
 // Effets d’aura de champ (nouveaux)
-#macro EFFECT_AURA_ARCHETYPE_BUFF "aura_archetype_buff"   // Aura: buff ATK/DEF par archétype sur le terrain
 #macro EFFECT_AURA_ALL_MONSTERS_DEBUFF "aura_all_monsters_debuff"   // Aura: debuff ATK/DEF pour tous les monstres sur le terrain
 #macro EFFECT_AURA_CLEANUP_SOURCE "aura_cleanup_source"   // Nettoyage d’aura: retirer les contributions d’une source
 #macro EFFECT_DAMAGE_OPP_PER_ARCHETYPE_ON_FIELD "damage_opp_per_archetype_on_field"   // Tombe: dégâts à l’adversaire par monstre d’un archétype sur le terrain
 #macro EFFECT_DAMAGE_OPP_PER_GENRE_ON_FIELD "damage_opp_per_genre_on_field"   // Tombe: dégâts à l’adversaire par monstre d’un genre (allié) sur le terrain
-// (Obsolète supprimé) Destructions aléatoires désormais gérées via EFFECT_DESTROY avec critères
 
 // === FONCTION PRINCIPALE D'EXÉCUTION DES EFFETS ===
 
@@ -173,7 +164,6 @@ function executeEffect(card, effect, context = {}) {
                        || effectType == EFFECT_BANISH_TARGET
                        || effectType == EFFECT_RETURN_TO_HAND
                        || effectType == EFFECT_EQUIP_SELECT_TARGET
-                       || effectType == EFFECT_GAIN_ATTACK
                        || effectType == EFFECT_BUFF);
     if (needsTarget && target == noone) {
         // Activation manuelle uniquement (phase principale ou effet rapide) et uniquement côté Héros (jamais IA)
@@ -408,41 +398,7 @@ function executeEffect(card, effect, context = {}) {
             return damageCard(card, value);
             
         // Effets de combat
-        case EFFECT_GAIN_ATTACK:
-        {
-            var t = (target != noone) ? target : card;
-            if (t == noone) return false;
-            // Validation par critères si fournis
-            var ok = true;
-            if (variable_struct_exists(effect, "criteria")) {
-                var crit = effect.criteria;
-                if (variable_struct_exists(crit, "type")) {
-                    var wantType = string_lower(crit.type);
-                    var isMon = object_is_ancestor(t.object_index, oCardMonster) || (variable_instance_exists(t, "type") && string_lower(t.type) == "monster");
-                    if (wantType == "monster" && !isMon) ok = false;
-                }
-                if (variable_struct_exists(crit, "genre")) {
-                    var wantGenre = string_lower(string(crit.genre));
-                    var tg = variable_instance_exists(t, "genre") ? string_lower(string(t.genre)) : "";
-                    if (wantGenre != "" && tg != wantGenre) ok = false;
-                }
-            }
-            // Restriction d'allégeance si owner spécifié
-            if (variable_struct_exists(effect, "owner")) {
-                var ownerSide = string_lower(effect.owner);
-                var srcHero = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
-                var tgtHero = (instance_exists(t) && variable_instance_exists(t, "isHeroOwner")) ? t.isHeroOwner : srcHero;
-                if (ownerSide == "ally" && (tgtHero != srcHero)) ok = false;
-                if (ownerSide == "enemy" && (tgtHero == srcHero)) ok = false;
-            }
-            if (!ok) return false;
-            // Appliquer ATK, et DEF si demandé dans l'effet
-            modifyAttack(t, value, false);
-            if (variable_struct_exists(effect, "def")) {
-                modifyDefense(t, effect.def, false);
-            }
-            return true;
-        }
+        
             
         case EFFECT_LOSE_ATTACK:
             return modifyAttack(card, -value, true);
@@ -455,85 +411,9 @@ function executeEffect(card, effect, context = {}) {
             return modifyAttack(t, -value, false);
         }
             
-        case EFFECT_GAIN_DEFENSE:
-        {
-            var t2 = (target != noone) ? target : card;
-            if (t2 == noone) return false;
-            // Critères éventuels identiques à ATK
-            var ok2 = true;
-            if (variable_struct_exists(effect, "criteria")) {
-                var crit2 = effect.criteria;
-                if (variable_struct_exists(crit2, "type")) {
-                    var wantType2 = string_lower(crit2.type);
-                    var isMon2 = object_is_ancestor(t2.object_index, oCardMonster) || (variable_instance_exists(t2, "type") && string_lower(t2.type) == "monster");
-                    if (wantType2 == "monster" && !isMon2) ok2 = false;
-                }
-                if (variable_struct_exists(crit2, "genre")) {
-                    var wantGenre2 = string_lower(string(crit2.genre));
-                    var tg2 = variable_instance_exists(t2, "genre") ? string_lower(string(t2.genre)) : "";
-                    if (wantGenre2 != "" && tg2 != wantGenre2) ok2 = false;
-                }
-            }
-            if (variable_struct_exists(effect, "owner")) {
-                var ownerSide2 = string_lower(effect.owner);
-                var srcHero2 = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
-                var tgtHero2 = (instance_exists(t2) && variable_instance_exists(t2, "isHeroOwner")) ? t2.isHeroOwner : srcHero2;
-                if (ownerSide2 == "ally" && (tgtHero2 != srcHero2)) ok2 = false;
-                if (ownerSide2 == "enemy" && (tgtHero2 == srcHero2)) ok2 = false;
-            }
-            if (!ok2) return false;
-            modifyDefense(t2, value, false);
-            return true;
-        }
+        
 
-        case EFFECT_BUFF_TARGET_BY_CRITERIA:
-        {
-            var ownerSide = "ally";
-            if (variable_struct_exists(effect, "owner")) ownerSide = string_lower(effect.owner);
-            var ownerIsHeroFlag = (card != noone && instance_exists(card) && variable_instance_exists(card, "isHeroOwner")) ? card.isHeroOwner : true;
-            var pickHeroField = (ownerSide == "ally") ? ownerIsHeroFlag : !ownerIsHeroFlag;
-            var fieldArr = pickHeroField ? fieldMonsterHero.cards : fieldMonsterEnemy.cards;
-
-            var crit = variable_struct_exists(effect, "criteria") ? effect.criteria : {};
-            var wantGenre = variable_struct_exists(crit, "genre") ? string(crit.genre) : "";
-            var wantType  = variable_struct_exists(crit, "type") ? string_lower(crit.type) : "monster";
-
-            var candidates = [];
-            for (var i = 0; i < array_length(fieldArr); i++) {
-                var c = fieldArr[i];
-                if (c == 0 || c == noone || !instance_exists(c)) continue;
-                if (!variable_instance_exists(c, "zone") || !(c.zone == "Field" || c.zone == "FieldSelected")) continue;
-                if (c == card) continue;
-                var isMon = object_is_ancestor(c.object_index, oCardMonster) || (variable_instance_exists(c, "type") && string_lower(c.type) == "monster");
-                if (!isMon) continue;
-                var ok = true;
-                if (wantType != "" && wantType != "monster") { ok = ok && (string_lower(c.type) == wantType); }
-                if (wantGenre != "") {
-                    var cg = variable_instance_exists(c, "genre") ? string(c.genre) : "";
-                    ok = ok && (string_lower(cg) == string_lower(wantGenre));
-                }
-                if (ok) array_push(candidates, c);
-            }
-
-            if (array_length(candidates) <= 0) return false;
-            var target2 = candidates[0];
-            var bestIdx = 0; var bestVal = -100000;
-            for (var j = 0; j < array_length(candidates); j++) {
-                var tc = candidates[j];
-                var eatk = variable_instance_exists(tc, "effective_attack") ? tc.effective_attack : (variable_instance_exists(tc, "attack") ? tc.attack : 0);
-                var edef = variable_instance_exists(tc, "effective_defense") ? tc.effective_defense : (variable_instance_exists(tc, "defense") ? tc.defense : 0);
-                var score = eatk + edef;
-                if (score > bestVal) { bestVal = score; bestIdx = j; }
-            }
-            target2 = candidates[bestIdx];
-
-            var addAtk = variable_struct_exists(effect, "atk") ? effect.atk : (variable_struct_exists(effect, "value") ? effect.value : 500);
-            var addDef = variable_struct_exists(effect, "def") ? effect.def : (variable_struct_exists(effect, "value") ? effect.value : 500);
-
-            modifyAttack(target2, addAtk, false);
-            modifyDefense(target2, addDef, false);
-            return true;
-        }
+        
             
         case EFFECT_LOSE_DEFENSE:
             return modifyDefense(card, -value, true);
@@ -945,12 +825,10 @@ function executeEffect(card, effect, context = {}) {
 
          
          // Effet continu: boost d'ATK basé sur l'archétype dans les cimetières
-        case EFFECT_BOOST_ATK_PER_GRAVEYARD_ARCHETYPE:
-            return applyGraveyardArchetypeBoost(card, effect);
+        
         
         // Effet continu: boost d'ATK basé sur le genre dans le cimetière du propriétaire
-        case EFFECT_BOOST_ATK_PER_GRAVEYARD_GENRE:
-            return applyGraveyardGenreBoost(card, effect);
+        
             
         // Effets d’équipement
         case EFFECT_EQUIP_SELECT_TARGET:
@@ -958,10 +836,7 @@ function executeEffect(card, effect, context = {}) {
             return equipSelectTarget(card, effect, context);
         }
         
-        case EFFECT_EQUIP_APPLY_BUFF:
-        {
-            return equipApplyBuff(card, effect, context);
-        }
+        
         
         case EFFECT_EQUIP_CLEANUP:
         {
@@ -969,10 +844,7 @@ function executeEffect(card, effect, context = {}) {
         }
         
         // Aura: buff ATK/DEF par archétype sur le terrain
-        case EFFECT_AURA_ARCHETYPE_BUFF:
-        {
-            return applyArchetypeAuraBuff(card, effect);
-        }
+        
         
         case EFFECT_AURA_ALL_MONSTERS_DEBUFF:
         {
